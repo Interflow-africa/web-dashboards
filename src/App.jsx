@@ -25,6 +25,7 @@ const SharePortfolioPage   = lazy(() => import('@/pages/SharePortfolioPage'));
 const OrgOpportunitiesPage = lazy(() => import('@/pages/OrgOpportunitiesPage'));
 const OrgApplicationsPage  = lazy(() => import('@/pages/OrgApplicationsPage'));
 const PublicPortfolioPage  = lazy(() => import('@/pages/PublicPortfolioPage'));
+const OrgProfilePage       = lazy(() => import('@/pages/OrgProfilePage'));
 
 const PrivateRoute = ({ children }) => {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
@@ -73,6 +74,7 @@ function App() {
           <Route path="/applications" element={<PrivateRoute><ApplicationsPage /></PrivateRoute>} />
           <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
           <Route path="/org/dashboard" element={<PrivateRoute><OrgDashboard /></PrivateRoute>} />
+          <Route path="/org/profile" element={<PrivateRoute><OrgProfilePage /></PrivateRoute>} />
           <Route path="/org/opportunities" element={<PrivateRoute><OrgOpportunitiesPage /></PrivateRoute>} />
           <Route path="/org/applications" element={<PrivateRoute><OrgApplicationsPage /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />

@@ -4,7 +4,6 @@ import {
   LayoutDashboard, User, Users, Briefcase, FileText,
   Share2, HelpCircle, Settings, Bell, Mail, Search, LogOut,
 } from 'lucide-react';
-import Logo from '@/components/common/Logo';
 import useAuthStore from '@/store/authStore';
 import { notificationsAPI } from '@/services/index';
 
@@ -18,10 +17,11 @@ const ARTIST_NAV = [
 ];
 
 const ORG_NAV = [
-  { label: 'Dashboard',      icon: LayoutDashboard, to: '/org/dashboard' },
-  { label: 'Opportunities',  icon: Briefcase,       to: '/org/opportunities' },
-  { label: 'Applications',   icon: FileText,        to: '/org/applications' },
-  { label: 'My Network',     icon: Users,           to: '/network' },
+  { label: 'Dashboard',     icon: LayoutDashboard, to: '/org/dashboard' },
+  { label: 'Profile',       icon: User,            to: '/org/profile' },
+  { label: 'Opportunities', icon: Briefcase,       to: '/org/opportunities' },
+  { label: 'Applications',  icon: FileText,        to: '/org/applications' },
+  { label: 'Messages',      icon: Mail,            to: '/messages' },
 ];
 
 const BOTTOM_NAV = [
@@ -92,6 +92,7 @@ const DashboardLayout = ({ children }) => {
             }
           </div>
           <p className="text-white text-[13px] font-semibold leading-tight text-center">{displayName}</p>
+          <p className="text-white/40 text-[11px] mt-0.5">{isOrg ? 'Admin' : 'Artist'}</p>
         </div>
 
         {/* Main nav */}
@@ -121,7 +122,7 @@ const DashboardLayout = ({ children }) => {
       <div className="flex-1 ml-[220px] flex flex-col min-h-screen">
         {/* Top bar */}
         <header className="bg-white h-[68px] flex items-center px-7 gap-5 sticky top-0 z-20 border-b border-[#EBEBEB]">
-          <Logo variant="default" size="sm" />
+          <img src="/assets/icons/interflow-logo.svg" alt="Interflow" style={{ height: 36, width: 'auto' }} />
 
           {/* Search */}
           <div className="flex-1 max-w-[380px] mx-auto relative">

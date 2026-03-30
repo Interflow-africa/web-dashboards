@@ -20,12 +20,15 @@ const db = {
   users: [],
   otps:  {},        // email → otp code
   resetTokens: {},  // email → token
+  sessions: {},     // accessToken → email
 };
 
-const fakeTokens = (email) => ({
-  access:  `mock_access_${btoa(email)}_${Date.now()}`,
-  refresh: `mock_refresh_${btoa(email)}_${Date.now()}`,
-});
+const fakeTokens = (email) => {
+  const access  = `mock_access_${btoa(email)}_${Date.now()}`;
+  const refresh = `mock_refresh_${btoa(email)}_${Date.now()}`;
+  db.sessions[access] = email; // track who owns this token
+  return { access, refresh };
+};
 
 /* ─── Mock Auth API ──────────────────────────────────────────────── */
 export const mockAuthAPI = {
@@ -100,16 +103,13 @@ export const mockAuthAPI = {
 
   async getMe() {
     await DELAY(300);
-    // Return a default mock artist profile
-    return ok({
-      id: 1,
-      email: 'artist@demo.com',
-      first_name: 'Alex',
-      last_name: 'Rivera',
-      role: 'artist',
-      is_onboarded: true,
-      avatar: null,
-    });
+    // Resolve the current user from the stored access token
+    const token = localStorage.getItem('interflow_access');
+    const email = token ? db.sessions[token] : null;
+    const user  = email ? db.users.find(u => u.email === email) : null;
+    if (!user) throw err('Not authenticated.', 401);
+    const { password: _pw, ...safe } = user; // never expose password
+    return ok(safe);
   },
 
   async getDashboard() {
@@ -163,7 +163,14 @@ export const mockArtistAPI = {
   async updateExperience(pk, data) { await DELAY(); return ok({ id: pk, ...data }); },
   async deleteExperience(pk) { await DELAY(300); return ok({ message: 'Deleted.' }); },
 
-  async completeOnboarding() { await DELAY(); return ok({ message: 'Onboarding complete.' }); },
+  async completeOnboarding() {
+    await DELAY();
+    const token = localStorage.getItem('interflow_access');
+    const email = token ? db.sessions[token] : null;
+    const user  = email ? db.users.find(u => u.email === email) : null;
+    if (user) user.is_onboarded = true;
+    return ok({ message: 'Onboarding complete.' });
+  },
 
   async getDisciplineOptions(discipline) {
     await DELAY(300);
@@ -201,7 +208,14 @@ export const mockOrgAPI = {
   async step2(data) { await DELAY(); return ok({ message: 'Step 2 saved.', ...data }); },
   async step3(data) { await DELAY(800); return ok({ message: 'Documents uploaded.' }); },
   async getVerificationStatus() { await DELAY(300); return ok({ status: 'pending' }); },
-  async completeOnboarding() { await DELAY(); return ok({ message: 'Onboarding complete.' }); },
+  async completeOnboarding() {
+    await DELAY();
+    const token = localStorage.getItem('interflow_access');
+    const email = token ? db.sessions[token] : null;
+    const user  = email ? db.users.find(u => u.email === email) : null;
+    if (user) user.is_onboarded = true;
+    return ok({ message: 'Onboarding complete.' });
+  },
   async getMedia() { await DELAY(400); return ok([]); },
   async uploadMedia(data) { await DELAY(800); return ok({ id: Date.now(), url: '#', type: 'image' }); },
   async deleteMedia(pk) { await DELAY(300); return ok({ message: 'Deleted.' }); },

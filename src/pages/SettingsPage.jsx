@@ -1,173 +1,454 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import DashboardLayout from '../components/common/DashboardLayout';
-import { settingsAPI, authAPI } from '../services/api';
-import useAuthStore from '../store/authStore';
+import React, { useState } from 'react';
+import { X, ChevronDown } from 'lucide-react';
+import DashboardLayout from '@/components/common/DashboardLayout';
 import toast from 'react-hot-toast';
 
+/* ── Toggle Switch ── */
+const Toggle = ({ on, onToggle }) => (
+  <button
+    type="button"
+    onClick={onToggle}
+    className={`relative w-10 h-5 rounded-full transition-colors ${on ? 'bg-green-500' : 'bg-gray-300'}`}
+  >
+    <span
+      className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${on ? 'translate-x-5' : 'translate-x-0.5'}`}
+    />
+  </button>
+);
+
+/* ── Reusable field components ── */
+const Field = ({ label, value, onChange, type = 'text', placeholder = '' }) => (
+  <div className="flex flex-col">
+    <label className="text-[12px] text-[#888] mb-1">{label}</label>
+    <input
+      type={type}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-[#8D5D1D] transition-colors"
+    />
+  </div>
+);
+
+const SelectField = ({ label, value, onChange, options }) => (
+  <div className="flex flex-col">
+    <label className="text-[12px] text-[#888] mb-1">{label}</label>
+    <div className="relative">
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full appearance-none border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-[#8D5D1D] transition-colors pr-8 bg-white"
+      >
+        <option value="">Select…</option>
+        {options.map((o) => (
+          <option key={o} value={o}>{o}</option>
+        ))}
+      </select>
+      <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+    </div>
+  </div>
+);
+
+/* ── Save / Cancel row ── */
+const FormActions = ({ onSave, onCancel }) => (
+  <div className="flex items-center gap-3 mt-4">
+    <button
+      type="button"
+      onClick={onSave}
+      className="px-5 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+      style={{ background: '#8D5D1D' }}
+    >
+      Save
+    </button>
+    <button
+      type="button"
+      onClick={onCancel}
+      className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors"
+    >
+      Cancel
+    </button>
+  </div>
+);
+
+/* ── Section icon circle ── */
+const IconCircle = ({ bg, children }) => (
+  <div
+    className="w-9 h-9 rounded-full flex items-center justify-center text-base flex-shrink-0"
+    style={{ background: bg }}
+  >
+    {children}
+  </div>
+);
+
+/* ── Expandable row ── */
+const SettingRow = ({ label, expanded, onEdit, onClose, children }) => (
+  <div className={`border rounded-xl transition-colors ${expanded ? 'border-[#8D5D1D]/40 bg-[#FDFAF5]' : 'border-gray-100 bg-white'}`}>
+    <div className="flex items-center justify-between px-5 py-4">
+      <span className="text-sm font-medium text-gray-800">{label}</span>
+      {expanded ? (
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+        >
+          <X size={14} className="text-gray-500" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onEdit}
+          className="px-4 py-1.5 rounded-full text-sm font-medium border border-[#8D5D1D] text-[#8D5D1D] hover:bg-[#F5EED7] transition-colors"
+          style={{ background: '#F5EED7' }}
+        >
+          Edit
+        </button>
+      )}
+    </div>
+    {expanded && (
+      <div className="px-5 pb-5">
+        {children}
+      </div>
+    )}
+  </div>
+);
+
+/* ══════════════════════════════════════════════
+   Main page
+══════════════════════════════════════════════ */
 const SettingsPage = () => {
-  const [tab, setTab] = useState('profile');
-  const [profileForm, setProfileForm] = useState({ email: '' });
-  const [notifPrefs, setNotifPrefs] = useState({});
-  const [privacy, setPrivacy] = useState({});
-  const [twoFA, setTwoFA] = useState({ is_enabled: false });
-  const [loading, setLoading] = useState(false);
-  const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
+  /* which row is open: key = "cardIndex-rowIndex" */
+  const [open, setOpen] = useState(null);
+  const toggle = (key) => setOpen((prev) => (prev === key ? null : key));
+  const close = () => setOpen(null);
 
-  useEffect(() => {
-    settingsAPI.getProfile().then(r => setProfileForm({ email: r.data.data?.email || '' })).catch(() => {});
-    settingsAPI.getNotificationPrefs().then(r => setNotifPrefs(r.data.data || {})).catch(() => {});
-    settingsAPI.getPrivacy().then(r => setPrivacy(r.data.data || {})).catch(() => {});
-    settingsAPI.get2FAStatus().then(r => setTwoFA(r.data.data || {})).catch(() => {});
-  }, []);
+  const save = () => { toast.success('Saved!'); close(); };
 
-  const save = async (fn, successMsg) => {
-    setLoading(true);
-    try { await fn(); toast.success(successMsg); }
-    catch (e) { toast.error(e.response?.data?.message || 'Failed to save'); }
-    finally { setLoading(false); }
-  };
+  /* ── Card 1: Portfolio Information ── */
+  const [portName, setPortName] = useState({ firstName: 'Dayo', lastName: 'Ajayi', location: '', pronouns: '' });
+  const [portContact, setPortContact] = useState({ phone: '', address: '', city: '', state: '', zip: '' });
 
-  const TABS = [
-    { key: 'profile', label: 'Profile Information', icon: '👤' },
-    { key: 'notifications', label: 'Notification Settings', icon: '🔔' },
-    { key: 'privacy', label: 'Privacy Settings', icon: '🔒' },
-    { key: '2fa', label: '2FA Security', icon: '🛡' },
-    { key: 'account', label: 'Account Management', icon: '⚙' },
+  /* ── Card 2: Notification Settings ── */
+  const [notifs, setNotifs] = useState({ reachout: true, connection: true, all: true });
+  const toggleNotif = (k) => setNotifs((p) => ({ ...p, [k]: !p[k] }));
+
+  /* ── Card 3: URLs and Domains ── */
+  const [slug, setSlug] = useState('dayo-ajayi');
+
+  /* ── Card 4: Account Management ── */
+  const [emailAddr, setEmailAddr] = useState('dayo.ajayi@example.com');
+  const [closeReason, setCloseReason] = useState('');
+  const [closeMessage, setCloseMessage] = useState('');
+
+  const CLOSE_REASONS = [
+    'I have a duplicate account',
+    'I am getting too many emails',
+    'I have privacy concern',
+    'I am receiving unwanted contact',
+    'Others',
   ];
 
   return (
     <DashboardLayout>
-      <div className="dash-page-header"><h1 className="dash-page-title">Settings</h1></div>
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: '20px' }}>
-        {/* Settings Nav */}
-        <div className="section-card" style={{ padding: '12px', height: 'fit-content' }}>
-          {TABS.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', padding: '11px 12px', borderRadius: 'var(--radius-sm)', background: tab===t.key?'var(--gold-pale)':'none', color: tab===t.key?'var(--gold)':'var(--text-secondary)', fontWeight: tab===t.key?'600':'400', fontSize: '14px', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all var(--transition)', textAlign: 'left', marginBottom: '2px' }}>
-              <span>{t.icon}</span>{t.label}
-            </button>
-          ))}
+      <h1
+        className="font-bold text-[22px] text-gray-900 mb-5"
+        style={{ fontFamily: 'Montserrat, sans-serif' }}
+      >
+        Settings
+      </h1>
+
+      <div className="flex flex-col gap-4">
+
+        {/* ══ Card 1 — Portfolio Information ══ */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <IconCircle bg="#F5EED7">👤</IconCircle>
+            <h2
+              className="font-bold text-[16px] text-gray-900"
+              style={{ fontFamily: 'Montserrat, sans-serif' }}
+            >
+              Portfolio Information
+            </h2>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {/* Row 1: Name & General */}
+            <SettingRow
+              label="Name, location and General Information"
+              expanded={open === '1-0'}
+              onEdit={() => toggle('1-0')}
+              onClose={close}
+            >
+              <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field
+                    label="First name"
+                    value={portName.firstName}
+                    onChange={(e) => setPortName((p) => ({ ...p, firstName: e.target.value }))}
+                  />
+                  <Field
+                    label="Last name"
+                    value={portName.lastName}
+                    onChange={(e) => setPortName((p) => ({ ...p, lastName: e.target.value }))}
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <SelectField
+                    label="Location"
+                    value={portName.location}
+                    onChange={(e) => setPortName((p) => ({ ...p, location: e.target.value }))}
+                    options={['Lagos, Nigeria', 'Abuja, Nigeria', 'London, UK', 'New York, USA']}
+                  />
+                  <SelectField
+                    label="Pronouns"
+                    value={portName.pronouns}
+                    onChange={(e) => setPortName((p) => ({ ...p, pronouns: e.target.value }))}
+                    options={['He/Him', 'She/Her', 'They/Them', 'Prefer not to say']}
+                  />
+                </div>
+                <FormActions onSave={save} onCancel={close} />
+              </div>
+            </SettingRow>
+
+            {/* Row 2: Contact Information */}
+            <SettingRow
+              label="Contact Information"
+              expanded={open === '1-1'}
+              onEdit={() => toggle('1-1')}
+              onClose={close}
+            >
+              <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field
+                    label="Phone number"
+                    type="tel"
+                    value={portContact.phone}
+                    onChange={(e) => setPortContact((p) => ({ ...p, phone: e.target.value }))}
+                    placeholder="+234 800 000 0000"
+                  />
+                </div>
+                <p className="text-[12px] text-[#888] -mb-2">Current Address</p>
+                <Field
+                  label="Address"
+                  value={portContact.address}
+                  onChange={(e) => setPortContact((p) => ({ ...p, address: e.target.value }))}
+                  placeholder="Street address"
+                />
+                <div className="grid grid-cols-3 gap-4">
+                  <Field
+                    label="City"
+                    value={portContact.city}
+                    onChange={(e) => setPortContact((p) => ({ ...p, city: e.target.value }))}
+                  />
+                  <Field
+                    label="State"
+                    value={portContact.state}
+                    onChange={(e) => setPortContact((p) => ({ ...p, state: e.target.value }))}
+                  />
+                  <Field
+                    label="Zip"
+                    value={portContact.zip}
+                    onChange={(e) => setPortContact((p) => ({ ...p, zip: e.target.value }))}
+                  />
+                </div>
+                <FormActions onSave={save} onCancel={close} />
+              </div>
+            </SettingRow>
+          </div>
         </div>
 
-        {/* Settings Content */}
-        <div className="section-card" style={{ padding: '28px' }}>
-          {tab === 'profile' && (
+        {/* ══ Card 2 — Notification Settings ══ */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-1">
+            <IconCircle bg="#DBEAFE">🔔</IconCircle>
             <div>
-              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px' }}>Profile Information</h3>
-              <div className="form-group" style={{ maxWidth: '400px', marginBottom: '20px' }}>
-                <label className="form-label">Email Address</label>
-                <input className="form-input" type="email" value={profileForm.email} onChange={e => setProfileForm(f => ({ ...f, email: e.target.value }))} />
-              </div>
-              <button className="btn btn-primary" disabled={loading} onClick={() => save(() => settingsAPI.updateProfile(profileForm), 'Profile updated!')}>
-                {loading ? <span className="spinner" /> : 'Save Changes'}
-              </button>
+              <h2
+                className="font-bold text-[16px] text-gray-900 leading-tight"
+                style={{ fontFamily: 'Montserrat, sans-serif' }}
+              >
+                Notification Settings
+              </h2>
+              <p className="text-xs text-gray-500">Control where and what kind of notifications you get</p>
             </div>
-          )}
+          </div>
 
-          {tab === 'notifications' && (
-            <div>
-              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px' }}>Notification Settings</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="mt-4 flex flex-col gap-3">
+            <SettingRow
+              label="Email"
+              expanded={open === '2-0'}
+              onEdit={() => toggle('2-0')}
+              onClose={close}
+            >
+              <div className="flex flex-col gap-4">
+                <p className="text-sm text-gray-600">Would you like to receive email notification.</p>
+
                 {[
-                  { key: 'email_new_connection', label: 'New connection request', type: 'Email' },
-                  { key: 'email_connection_accepted', label: 'Connection accepted', type: 'Email' },
-                  { key: 'email_new_application', label: 'New application (orgs)', type: 'Email' },
-                  { key: 'email_application_status', label: 'Application status update', type: 'Email' },
-                  { key: 'email_new_opportunity', label: 'New opportunity matching my profile', type: 'Email' },
-                  { key: 'email_marketing', label: 'Marketing & promotions', type: 'Email' },
-                ].map(item => (
-                  <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--dark)' }}>{item.label}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{item.type} notification</div>
-                    </div>
-                    <label style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px' }}>
-                      <input type="checkbox" checked={!!notifPrefs[item.key]} onChange={e => { const updated = { ...notifPrefs, [item.key]: e.target.checked }; setNotifPrefs(updated); settingsAPI.updateNotificationPrefs({ [item.key]: e.target.checked }).catch(() => {}); }} style={{ display: 'none' }} />
-                      <span style={{ position: 'absolute', inset: 0, background: notifPrefs[item.key] ? 'var(--gold)' : 'var(--grey-2)', borderRadius: '12px', cursor: 'pointer', transition: 'background var(--transition)' }}>
-                        <span style={{ position: 'absolute', left: notifPrefs[item.key] ? '22px' : '2px', top: '2px', width: '20px', height: '20px', borderRadius: '50%', background: 'white', transition: 'left var(--transition)', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
-                      </span>
-                    </label>
+                  { key: 'reachout',   label: 'Reach out Messages' },
+                  { key: 'connection', label: 'Connection Request' },
+                  { key: 'all',        label: 'All notifications' },
+                ].map(({ key, label }) => (
+                  <div key={key} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">{label}</span>
+                    <Toggle on={notifs[key]} onToggle={() => toggleNotif(key)} />
                   </div>
                 ))}
-              </div>
-            </div>
-          )}
 
-          {tab === 'privacy' && (
-            <div>
-              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px' }}>Privacy Settings</h3>
-              {[
-                { key: 'profile_visible_to', label: 'Profile Visibility', type: 'select', options: [['everyone','Everyone'],['connections','Connections Only'],['organizations','Organizations Only']] },
-                { key: 'allow_messages_from', label: 'Allow Messages From', type: 'select', options: [['everyone','Everyone'],['connections','Connections Only'],['organizations','Organizations Only']] },
-                { key: 'show_location', label: 'Show my location on profile', type: 'toggle' },
-                { key: 'show_in_search', label: 'Appear in search results', type: 'toggle' },
-              ].map(item => (
-                <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', marginBottom: '12px' }}>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--dark)' }}>{item.label}</div>
-                  {item.type === 'select' ? (
-                    <select className="form-input form-select" style={{ width: '180px' }} value={privacy[item.key] || ''} onChange={e => { const up = { ...privacy, [item.key]: e.target.value }; setPrivacy(up); settingsAPI.updatePrivacy({ [item.key]: e.target.value }).catch(() => {}); }}>
-                      {item.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                    </select>
-                  ) : (
-                    <label style={{ position: 'relative', display: 'inline-block', width: '44px', height: '24px' }}>
-                      <input type="checkbox" checked={!!privacy[item.key]} onChange={e => { const up = { ...privacy, [item.key]: e.target.checked }; setPrivacy(up); settingsAPI.updatePrivacy({ [item.key]: e.target.checked }).catch(() => {}); }} style={{ display: 'none' }} />
-                      <span style={{ position: 'absolute', inset: 0, background: privacy[item.key] ? 'var(--gold)' : 'var(--grey-2)', borderRadius: '12px', cursor: 'pointer', transition: 'background var(--transition)' }}>
-                        <span style={{ position: 'absolute', left: privacy[item.key] ? '22px' : '2px', top: '2px', width: '20px', height: '20px', borderRadius: '50%', background: 'white', transition: 'left var(--transition)' }} />
-                      </span>
-                    </label>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {tab === '2fa' && (
-            <div>
-              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Two-Factor Authentication</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '24px' }}>Add an extra layer of security to your account using an authenticator app.</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '20px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', marginBottom: '20px' }}>
-                <div style={{ fontSize: '32px' }}>🛡</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--dark)' }}>Authenticator App</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Use Google Authenticator, Authy, or similar</div>
-                </div>
-                <span className={`badge ${twoFA.is_enabled ? 'badge-success' : 'badge-grey'}`}>{twoFA.is_enabled ? 'Enabled' : 'Disabled'}</span>
+                <FormActions onSave={save} onCancel={close} />
               </div>
-              {!twoFA.is_enabled ? (
-                <button className="btn btn-primary" onClick={() => settingsAPI.setup2FA().then(r => { const { otpauth_uri, secret } = r.data.data; alert(`Scan this in your authenticator app:\n\nSecret: ${secret}\n\nOr use the URI: ${otpauth_uri}`); }).catch(() => toast.error('Setup failed'))}>
-                  Enable 2FA
-                </button>
-              ) : (
-                <button className="btn btn-outline" style={{ borderColor: 'var(--error)', color: 'var(--error)' }} onClick={() => { const code = prompt('Enter your current OTP code to disable 2FA:'); if (code) settingsAPI.disable2FA({ otp_code: code }).then(() => { setTwoFA({ is_enabled: false }); toast.success('2FA disabled'); }).catch(() => toast.error('Invalid code')); }}>
-                  Disable 2FA
-                </button>
-              )}
-            </div>
-          )}
-
-          {tab === 'account' && (
-            <div>
-              <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px' }}>Account Management</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ padding: '20px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-                  <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--dark)', marginBottom: '8px' }}>Deactivate Account</h4>
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>Temporarily disable your account. You can reactivate by signing in.</p>
-                  <button className="btn btn-outline btn-sm" onClick={() => { if (window.confirm('Deactivate your account?')) settingsAPI.deactivateAccount().then(() => { logout(); navigate('/login'); }).catch(() => toast.error('Failed')); }}>
-                    Deactivate Account
-                  </button>
-                </div>
-                <div style={{ padding: '20px', border: '1px solid var(--error)', borderRadius: 'var(--radius-md)', background: '#FFF5F5' }}>
-                  <h4 style={{ fontSize: '15px', fontWeight: '600', color: 'var(--error)', marginBottom: '8px' }}>Delete Account</h4>
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>Permanently delete your account and all data. This cannot be undone.</p>
-                  <button className="btn btn-sm" style={{ background: 'var(--error)', color: 'white' }} onClick={() => { const pwd = prompt('Enter your password:'); if (!pwd) return; if (window.confirm('Type "DELETE" to confirm:') !== true) return; settingsAPI.deleteAccount({ password: pwd, confirm: 'DELETE' }).then(() => { logout(); navigate('/'); toast.success('Account deleted'); }).catch(() => toast.error('Failed')); }}>
-                    Delete Account
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+            </SettingRow>
+          </div>
         </div>
+
+        {/* ══ Card 3 — URLs and Domains ══ */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-1">
+            <IconCircle bg="#FCE7F3">👥</IconCircle>
+            <div>
+              <h2
+                className="font-bold text-[16px] text-gray-900 leading-tight"
+                style={{ fontFamily: 'Montserrat, sans-serif' }}
+              >
+                URLs and Domains
+              </h2>
+              <p className="text-xs text-gray-500">Connect a domain and update your Stagetime URL.</p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3">
+            <SettingRow
+              label="Change the URL for your profile"
+              expanded={open === '3-0'}
+              onEdit={() => toggle('3-0')}
+              onClose={close}
+            >
+              <div className="flex flex-col gap-4">
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Your URL must contain 3–100 letters or numbers. Do not use spaces, symbols, or special
+                  characters (e.g. !, $, @). Do not put a web address in this field.
+                </p>
+                <div className="flex items-center gap-0 border border-gray-200 rounded-lg overflow-hidden focus-within:border-[#8D5D1D] transition-colors">
+                  <span className="px-3 py-2.5 text-sm text-gray-500 bg-gray-50 border-r border-gray-200 whitespace-nowrap">
+                    Interflow.ng/artists/
+                  </span>
+                  <input
+                    type="text"
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
+                    className="flex-1 px-3 py-2.5 text-sm text-gray-800 outline-none bg-white"
+                  />
+                </div>
+                <FormActions onSave={save} onCancel={close} />
+              </div>
+            </SettingRow>
+          </div>
+        </div>
+
+        {/* ══ Card 4 — Account Management ══ */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="flex items-center gap-3 mb-1">
+            <IconCircle bg="#DCFCE7">⚙️</IconCircle>
+            <div>
+              <h2
+                className="font-bold text-[16px] text-gray-900 leading-tight"
+                style={{ fontFamily: 'Montserrat, sans-serif' }}
+              >
+                Account Management
+              </h2>
+              <p className="text-xs text-gray-500">Control your Interflow account</p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3">
+            {/* Email address */}
+            <SettingRow
+              label="Email address"
+              expanded={open === '4-0'}
+              onEdit={() => toggle('4-0')}
+              onClose={close}
+            >
+              <div className="flex flex-col gap-4">
+                <Field
+                  label="Email address"
+                  type="email"
+                  value={emailAddr}
+                  onChange={(e) => setEmailAddr(e.target.value)}
+                />
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  If you'd like to update your email address, enter your new email address above.
+                  Our team will reach out once we've updated your email address.
+                </p>
+                <FormActions onSave={save} onCancel={close} />
+              </div>
+            </SettingRow>
+
+            {/* Close Account */}
+            <SettingRow
+              label="Close Account"
+              expanded={open === '4-1'}
+              onEdit={() => toggle('4-1')}
+              onClose={close}
+            >
+              <div className="flex flex-col gap-4">
+                <p className="text-sm font-medium text-gray-700">
+                  Let us know why you're closing your account:
+                </p>
+
+                <div className="flex flex-col gap-2">
+                  {CLOSE_REASONS.map((reason) => (
+                    <label key={reason} className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="closeReason"
+                        value={reason}
+                        checked={closeReason === reason}
+                        onChange={() => setCloseReason(reason)}
+                        className="accent-[#8D5D1D]"
+                      />
+                      <span className="text-sm text-gray-700">{reason}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  By closing your account, you will permanently lose access to your Interflow profile,
+                  portfolio, connections, and all associated data. This action cannot be undone.
+                  Please ensure you have saved any information you need before proceeding.
+                </p>
+
+                <div className="flex flex-col">
+                  <label className="text-[12px] text-[#888] mb-1">Message (optional)</label>
+                  <textarea
+                    rows={4}
+                    value={closeMessage}
+                    onChange={(e) => setCloseMessage(e.target.value)}
+                    placeholder="Any additional comments…"
+                    className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-[#8D5D1D] transition-colors resize-vertical"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => toast.error('Account closure requested.')}
+                    className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-colors hover:bg-red-600"
+                    style={{ background: '#8D5D1D' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#EF4444'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#8D5D1D'; }}
+                  >
+                    Close my account
+                  </button>
+                  <button
+                    type="button"
+                    onClick={close}
+                    className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </SettingRow>
+          </div>
+        </div>
+
       </div>
     </DashboardLayout>
   );
