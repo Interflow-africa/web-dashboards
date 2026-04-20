@@ -57,7 +57,17 @@ const useAuthStore = create(
         try {
           const res = await authAPI.getMe();
           set({ user: res.data.data });
-        } catch {}
+        } catch (err) {
+          // If /me fails with a 401 that wasn't caught by the axios interceptor
+          // (e.g. interceptor did the redirect but the promise never settled),
+          // make sure local state is consistent. The interceptor's
+          // localStorage.removeItem('interflow-auth') already handles the
+          // hard-redirect case, but this covers any in-process failure.
+          if (err?.response?.status === 401) {
+            tokens.clear();
+            set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+          }
+        }
       },
     }),
     {

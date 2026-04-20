@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { artistAPI } from '@/services/index';
+import { artistAPI, relevantWorksAPI } from '@/services/index';
 
 /* ─── Query Keys ────────────────────────────────────────────────── */
 export const ARTIST_KEYS = {
@@ -153,3 +153,56 @@ export const usePublicPortfolio = (token) =>
     queryFn: async () => (await artistAPI.getPublicPortfolio(token)).data.data,
     enabled: Boolean(token),
   });
+
+/* ─── Relevant Works ─────────────────────────────────────────────── */
+export const RELEVANT_WORKS_KEYS = {
+  all:    ['artist', 'relevant-works'],
+  detail: (pk) => ['artist', 'relevant-works', pk],
+};
+
+export const useRelevantWorks = () => {
+  return useQuery({
+    queryKey: RELEVANT_WORKS_KEYS.all,
+    queryFn: async () => {
+      const res = await relevantWorksAPI.list();
+      return res.data.data;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
+export const useCreateRelevantWork = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => relevantWorksAPI.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: RELEVANT_WORKS_KEYS.all });
+      toast.success('Work added!');
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to add work.'),
+  });
+};
+
+export const useUpdateRelevantWork = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ pk, data }) => relevantWorksAPI.update(pk, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: RELEVANT_WORKS_KEYS.all });
+      toast.success('Work updated!');
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to update work.'),
+  });
+};
+
+export const useDeleteRelevantWork = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (pk) => relevantWorksAPI.delete(pk),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: RELEVANT_WORKS_KEYS.all });
+      toast.success('Work removed.');
+    },
+    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to delete work.'),
+  });
+};

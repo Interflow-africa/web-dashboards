@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Plus, ChevronDown, Search, SlidersHorizontal, ArrowRight, ArrowLeft } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
+import { applicationsAPI } from '@/services/index';
+import toast from 'react-hot-toast';
 
 /* ─── Mock Data ───────────────────────────────────────────────── */
 
@@ -291,6 +293,22 @@ const ViewOpportunityModal = ({ opp, onClose }) => {
 /* ─── APPLICATION RESPONSE MODAL ─────────────────────────────── */
 const ApplicationResponseModal = ({ app, onClose }) => {
   const [responseStatus, setResponseStatus] = useState('');
+  const [orgFeedback, setOrgFeedback] = useState('');
+
+  const handleSubmit = async () => {
+    if (!responseStatus) { toast.error('Please select a response status'); return; }
+    try {
+      await applicationsAPI.updateStatus(app?.id, {
+        status: responseStatus,
+        org_notes: '',
+        org_feedback: orgFeedback,
+      });
+      toast.success('Response submitted!');
+      onClose();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to submit response');
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -334,15 +352,26 @@ const ApplicationResponseModal = ({ app, onClose }) => {
                 className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/20 appearance-none pr-8"
               >
                 <option value="">Select status</option>
-                <option value="Approved">Approved</option>
-                <option value="In review">In review</option>
-                <option value="Closed">Closed</option>
+                <option value="shortlisted">Shortlisted</option>
+                <option value="accepted">Accepted</option>
+                <option value="rejected">Rejected</option>
+                <option value="on_hold">On Hold</option>
               </select>
               <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
+          <div>
+            <label className="text-[11px] text-gray-400 font-medium mb-1 block">Feedback (optional)</label>
+            <textarea
+              rows={3}
+              value={orgFeedback}
+              onChange={e => setOrgFeedback(e.target.value)}
+              placeholder="Leave feedback for the applicant…"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/20 resize-vertical"
+            />
+          </div>
           <button
-            onClick={onClose}
+            onClick={handleSubmit}
             className="w-full h-11 rounded-full bg-[#8D5D1D] text-white text-[13px] font-semibold hover:bg-[#7A5019] transition-colors flex items-center justify-center gap-2 mt-1"
           >
             Submit <ArrowRight size={14} />

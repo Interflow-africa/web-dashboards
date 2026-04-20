@@ -89,7 +89,7 @@ const MailSentPage = () => {
 
         {/* Body text */}
         <p className="text-[14px] text-[#777] leading-relaxed mb-2">
-          We've sent password reset instructions to your email:
+          We've sent a 6-digit reset code to your email:
         </p>
         <p
           className="text-[14.5px] font-semibold text-[#1A1A1A] mb-7 break-all"
@@ -98,10 +98,10 @@ const MailSentPage = () => {
           {email}
         </p>
 
-        {/* Continue button */}
+        {/* Enter Reset Code button */}
         <button
-          onClick={() => navigate('/login')}
-          className="w-full flex items-center justify-center font-semibold transition-all hover:opacity-90 active:scale-95 mb-5"
+          onClick={() => navigate('/reset-password', { state: { email } })}
+          className="w-full flex items-center justify-center font-semibold transition-all hover:opacity-90 active:scale-95 mb-3"
           style={{
             background: GOLD,
             color: '#fff',
@@ -112,6 +112,22 @@ const MailSentPage = () => {
           }}
           onMouseEnter={e => e.currentTarget.style.background = GOLD_DARK}
           onMouseLeave={e => e.currentTarget.style.background = GOLD}
+        >
+          Enter Reset Code
+        </button>
+
+        {/* Back to Sign In link */}
+        <button
+          onClick={() => navigate('/login')}
+          className="w-full flex items-center justify-center font-semibold transition-all hover:opacity-70 mb-5"
+          style={{
+            background: 'transparent',
+            color: '#888',
+            fontSize: 14,
+            fontFamily: 'Montserrat, sans-serif',
+            border: 'none',
+            cursor: 'pointer',
+          }}
         >
           Back to Sign In
         </button>

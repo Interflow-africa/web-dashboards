@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Mail } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -6,6 +6,9 @@ import toast from 'react-hot-toast';
 import AuthSplitLayout from '@/components/layout/AuthSplitLayout';
 import FloatingInput from '@/components/common/FloatingInput';
 import { authAPI } from '@/services/index';
+import { useVerifyOTP } from '@/hooks/auth';
+import useAuthStore from '@/store/authStore';
+import tokens from '@/utils/tokens';
 import './Auth.css';
 
 /* ─── Brand ─────────────────────────────────────────────────────── */
@@ -223,7 +226,7 @@ const RegisterForm = ({ role, onSuccess }) => {
       return;
     }
     try {
-      await authAPI.register({ email: data.email, password: data.password, role });
+      await authAPI.register({ email: data.email, password: data.password, confirm_password: data.confirmPassword, role, tos_accepted: true });
       onSuccess(data.email);
     } catch (err) {
       const msg = err?.response?.data?.email?.[0]
@@ -405,13 +408,145 @@ const EmailConfirm = ({ email, onContinue }) => {
 };
 
 /* ─────────────────────────────────────────────────────────────────
-   Main RegisterPage — orchestrates the 3 steps
+   Step 4 — OTP Verification
+   ───────────────────────────────────────────────────────────────── */
+const OTPVerify = ({ email }) => {
+  const { register, handleSubmit, formState: { isSubmitting } } = useForm();
+  const { mutateAsync: verifyOTP } = useVerifyOTP();
+  const [resending, setResending] = useState(false);
+
+  const onSubmit = async (data) => {
+    try {
+      await verifyOTP({ email, code: data.code });
+      // useVerifyOTP hook auto-navigates to /register/success on success
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Invalid code. Please try again.');
+    }
+  };
+
+  const handleResend = async () => {
+    if (resending) return;
+    setResending(true);
+    try {
+      await authAPI.resendOTP({ email });
+      toast.success('Verification code resent!');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to resend code.');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  return (
+    <div className="confirm-wrap">
+      <img
+        src="/assets/images/auth/email-bg.jpg"
+        alt=""
+        className="confirm-bg-img"
+        onError={e => {
+          e.currentTarget.parentElement.style.background = '#0D0D0D';
+          e.currentTarget.style.display = 'none';
+        }}
+      />
+      <div className="confirm-overlay" />
+
+      <div className="confirm-card">
+        <img
+          src="/assets/icons/interflow-logo.svg"
+          alt="Interflow"
+          style={{ height: 52, width: 'auto', margin: '0 auto 24px' }}
+        />
+
+        <h2
+          className="font-bold text-[#1A1A1A] mb-3"
+          style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 26 }}
+        >
+          Verify Your Email
+        </h2>
+        <p className="text-[13.5px] text-[#777] leading-relaxed mb-7">
+          Enter the 6-digit code we sent to{' '}
+          <strong className="text-[#1A1A1A]">{email}</strong>
+        </p>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <input
+            type="text"
+            maxLength={6}
+            placeholder="------"
+            {...register('code', { required: true })}
+            style={{
+              display: 'block',
+              width: '100%',
+              textAlign: 'center',
+              fontSize: 28,
+              letterSpacing: '0.35em',
+              fontFamily: 'Montserrat, sans-serif',
+              fontWeight: 700,
+              color: '#1A1A1A',
+              border: '2px solid #E0D8CC',
+              borderRadius: 12,
+              padding: '14px 16px',
+              outline: 'none',
+              background: '#FAFAFA',
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = GOLD; }}
+            onBlur={e => { e.currentTarget.style.borderColor = '#E0D8CC'; }}
+          />
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full flex items-center justify-center font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
+            style={{
+              background: GOLD,
+              color: '#fff',
+              borderRadius: 9999,
+              height: 52,
+              fontSize: 15,
+              fontFamily: 'Montserrat, sans-serif',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = GOLD_DARK}
+            onMouseLeave={e => e.currentTarget.style.background = GOLD}
+          >
+            {isSubmitting ? 'Verifying…' : 'Verify'}
+          </button>
+        </form>
+
+        <p className="mt-5 text-[13px] text-[#888]">
+          Didn&apos;t receive the code?{' '}
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={resending}
+            className="font-semibold hover:underline disabled:opacity-60"
+            style={{ color: GOLD }}
+          >
+            {resending ? 'Sending…' : 'Resend Code'}
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────────
+   Main RegisterPage — orchestrates the 4 steps
    ───────────────────────────────────────────────────────────────── */
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const [step,  setStep]  = useState('role');   // 'role' | 'form' | 'confirm'
+  const [step,  setStep]  = useState('role');   // 'role' | 'form' | 'confirm' | 'otp'
   const [role,  setRole]  = useState(null);
   const [email, setEmail] = useState('');
+
+  // Clear any stale partial-registration auth state so PublicRoute doesn't
+  // redirect a returning user based on a previous incomplete session.
+  useEffect(() => {
+    const { isAuthenticated, user } = useAuthStore.getState();
+    if (isAuthenticated && !user?.is_onboarded) {
+      tokens.clear();
+      useAuthStore.setState({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+    }
+  }, []);
 
   if (step === 'role') {
     return <RolePicker onSelect={r => { setRole(r); setStep('form'); }} />;
@@ -425,12 +560,15 @@ const RegisterPage = () => {
       />
     );
   }
-  return (
-    <EmailConfirm
-      email={email}
-      onContinue={() => navigate('/login')}
-    />
-  );
+  if (step === 'confirm') {
+    return (
+      <EmailConfirm
+        email={email}
+        onContinue={() => setStep('otp')}
+      />
+    );
+  }
+  return <OTPVerify email={email} />;
 };
 
 export default RegisterPage;

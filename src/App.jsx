@@ -10,6 +10,7 @@ import ForgotPasswordPage from '@/components/auth/ForgotPasswordPage';
 import MailSentPage       from '@/components/auth/MailSentPage';
 import AccountCreatedPage from '@/components/auth/AccountCreatedPage';
 
+const ResetPasswordPage    = lazy(() => import('@/components/auth/ResetPasswordPage'));
 const ArtistOnboarding     = lazy(() => import('@/pages/ArtistOnboarding'));
 const OrgOnboarding        = lazy(() => import('@/pages/OrgOnboarding'));
 const ArtistDashboard      = lazy(() => import('@/pages/ArtistDashboard'));
@@ -60,9 +61,10 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/portfolio/public/:token" element={<PublicPortfolioPage />} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-          <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/forgot-password/sent" element={<MailSentPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/register/success" element={<PrivateRoute><AccountCreatedPage /></PrivateRoute>} />
           <Route path="/onboarding/artist" element={<PrivateRoute><ArtistOnboarding /></PrivateRoute>} />
           <Route path="/onboarding/organization" element={<PrivateRoute><OrgOnboarding /></PrivateRoute>} />
