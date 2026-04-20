@@ -3,10 +3,11 @@ import Logo from '@/components/common/Logo';
 
 const STEPS = [
   { n: '01', title: 'Personal Details',    desc: 'Fill in your personal details to get started' },
-  { n: '02', title: 'Proficiency scale',   desc: 'Indicate your proficiency level on the scale.' },
-  { n: '03', title: 'Customize Portfolio', desc: 'Upload images and photos of your choice to get started' },
-  { n: '04', title: 'Previous Experience', desc: 'Fill in details of your career and education experience' },
-  { n: '05', title: 'Make Connections',    desc: 'Select connections from the list to get started.' },
+  { n: '02', title: 'Proficiency Scale',   desc: 'Indicate your proficiency level on the scale.' },
+  { n: '03', title: 'Styles & Skills',     desc: 'Select your styles, skills and portfolio focus.' },
+  { n: '04', title: 'Customize Portfolio', desc: 'Upload images and photos of your choice.' },
+  { n: '05', title: 'Previous Experience', desc: 'Fill in details of your career and education.' },
+  { n: '06', title: 'Make Connections',    desc: 'Select connections from the list to get started.' },
 ];
 
 const OnboardingLayout = ({ children, currentStep = 1 }) => (

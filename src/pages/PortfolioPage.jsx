@@ -286,8 +286,19 @@ export const OpportunitiesPage = () => {
   useEffect(() => { load(); }, [search, filter]);
 
   const handleApply = async (oppId) => {
-    try { await applicationsAPI.apply({ opportunity: oppId, cover_letter: '' }); toast.success('Application submitted!'); }
-    catch (e) { toast.error(e.response?.data?.message || 'Could not apply'); }
+    try {
+      let portfolioLink = '';
+      try {
+        const shareRes = await artistAPI.getShareLink();
+        portfolioLink = shareRes.data.data?.url || '';
+      } catch {}
+      await applicationsAPI.apply({
+        opportunity: oppId,
+        cover_letter: '',
+        portfolio_link: portfolioLink,
+      });
+      toast.success('Application submitted!');
+    } catch (e) { toast.error(e.response?.data?.message || 'Could not apply'); }
   };
 
   return (

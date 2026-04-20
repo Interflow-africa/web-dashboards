@@ -16,6 +16,7 @@ import {
   notificationsAPI as realNotificationsAPI,
   settingsAPI    as realSettingsAPI,
   supportAPI     as realSupportAPI,
+  relevantWorksAPI as realRelevantWorksAPI,
 } from './api';
 
 import {
@@ -29,6 +30,7 @@ import {
   mockNotificationsAPI,
   mockSettingsAPI,
   mockSupportAPI,
+  mockRelevantWorksAPI,
 } from './mockApi';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
@@ -47,5 +49,6 @@ export const applicationsAPI  = USE_MOCK ? mockApplicationsAPI  : realApplicatio
 export const notificationsAPI = USE_MOCK ? mockNotificationsAPI : realNotificationsAPI;
 export const settingsAPI     = USE_MOCK ? mockSettingsAPI     : realSettingsAPI;
 export const supportAPI      = USE_MOCK ? mockSupportAPI      : realSupportAPI;
+export const relevantWorksAPI = USE_MOCK ? mockRelevantWorksAPI : realRelevantWorksAPI;
 
 export { USE_MOCK };

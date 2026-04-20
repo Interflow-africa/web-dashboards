@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import toast from 'react-hot-toast';
+import { settingsAPI, authAPI } from '@/services/index';
 
 /* ── Toggle Switch ── */
 const Toggle = ({ on, onToggle }) => (
@@ -121,8 +122,6 @@ const SettingsPage = () => {
   const toggle = (key) => setOpen((prev) => (prev === key ? null : key));
   const close = () => setOpen(null);
 
-  const save = () => { toast.success('Saved!'); close(); };
-
   /* ── Card 1: Portfolio Information ── */
   const [portName, setPortName] = useState({ firstName: 'Dayo', lastName: 'Ajayi', location: '', pronouns: '' });
   const [portContact, setPortContact] = useState({ phone: '', address: '', city: '', state: '', zip: '' });
@@ -138,6 +137,85 @@ const SettingsPage = () => {
   const [emailAddr, setEmailAddr] = useState('dayo.ajayi@example.com');
   const [closeReason, setCloseReason] = useState('');
   const [closeMessage, setCloseMessage] = useState('');
+  const [closePassword, setClosePassword] = useState('');
+
+  /* ── Specific save handlers ── */
+  const savePortfolioInfo = async () => {
+    try {
+      await settingsAPI.updateProfile({
+        display_name: `${portName.firstName} ${portName.lastName}`.trim(),
+        first_name: portName.firstName,
+        last_name: portName.lastName,
+        location: portName.location,
+        pronoun: portName.pronouns,
+      });
+      toast.success('Profile updated!');
+      close();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to save profile');
+    }
+  };
+
+  const saveContactInfo = async () => {
+    try {
+      await settingsAPI.updateProfile({
+        phone: portContact.phone,
+        address: portContact.address,
+        city: portContact.city,
+        state: portContact.state,
+      });
+      toast.success('Contact info updated!');
+      close();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to save contact info');
+    }
+  };
+
+  const saveNotifPrefs = async () => {
+    try {
+      await settingsAPI.updateNotificationPrefs({
+        email_new_connection: notifs.connection,
+        email_marketing: notifs.all,
+        inapp_profile_view: notifs.reachout,
+      });
+      toast.success('Notification preferences saved!');
+      close();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to save preferences');
+    }
+  };
+
+  const saveSlug = async () => {
+    try {
+      await settingsAPI.updateProfile({ slug });
+      toast.success('URL updated!');
+      close();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to update URL');
+    }
+  };
+
+  const saveEmailAddr = async () => {
+    try {
+      await settingsAPI.updateProfile({ email: emailAddr });
+      toast.success('Email update requested. Our team will confirm the change.');
+      close();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to update email');
+    }
+  };
+
+  const handleCloseAccount = async () => {
+    if (!closeReason) { toast.error('Please select a reason'); return; }
+    if (!closePassword) { toast.error('Password is required to close account'); return; }
+    try {
+      await settingsAPI.deleteAccount({ password: closePassword, confirm: 'DELETE' });
+      toast.success('Account closure requested.');
+      close();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to close account. Please check your password.');
+    }
+  };
 
   const CLOSE_REASONS = [
     'I have a duplicate account',
@@ -205,7 +283,7 @@ const SettingsPage = () => {
                     options={['He/Him', 'She/Her', 'They/Them', 'Prefer not to say']}
                   />
                 </div>
-                <FormActions onSave={save} onCancel={close} />
+                <FormActions onSave={savePortfolioInfo} onCancel={close} />
               </div>
             </SettingRow>
 
@@ -250,7 +328,7 @@ const SettingsPage = () => {
                     onChange={(e) => setPortContact((p) => ({ ...p, zip: e.target.value }))}
                   />
                 </div>
-                <FormActions onSave={save} onCancel={close} />
+                <FormActions onSave={saveContactInfo} onCancel={close} />
               </div>
             </SettingRow>
           </div>
@@ -292,7 +370,7 @@ const SettingsPage = () => {
                   </div>
                 ))}
 
-                <FormActions onSave={save} onCancel={close} />
+                <FormActions onSave={saveNotifPrefs} onCancel={close} />
               </div>
             </SettingRow>
           </div>
@@ -336,7 +414,7 @@ const SettingsPage = () => {
                     className="flex-1 px-3 py-2.5 text-sm text-gray-800 outline-none bg-white"
                   />
                 </div>
-                <FormActions onSave={save} onCancel={close} />
+                <FormActions onSave={saveSlug} onCancel={close} />
               </div>
             </SettingRow>
           </div>
@@ -376,7 +454,7 @@ const SettingsPage = () => {
                   If you'd like to update your email address, enter your new email address above.
                   Our team will reach out once we've updated your email address.
                 </p>
-                <FormActions onSave={save} onCancel={close} />
+                <FormActions onSave={saveEmailAddr} onCancel={close} />
               </div>
             </SettingRow>
 
@@ -425,10 +503,18 @@ const SettingsPage = () => {
                   />
                 </div>
 
+                <Field
+                  label="Enter your password to confirm"
+                  type="password"
+                  value={closePassword}
+                  onChange={(e) => setClosePassword(e.target.value)}
+                  placeholder="Your current password"
+                />
+
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => toast.error('Account closure requested.')}
+                    onClick={handleCloseAccount}
                     className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-colors hover:bg-red-600"
                     style={{ background: '#8D5D1D' }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = '#EF4444'; }}

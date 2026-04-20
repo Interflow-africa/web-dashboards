@@ -25,13 +25,17 @@ api.interceptors.response.use(
       try {
         const refresh = tokens.getRefresh();
         if (!refresh) throw new Error('No refresh token');
-        const res = await axios.post(`${BASE_URL}/auth/token/refresh/`, { refresh });
+        const res = await axios.post(`${BASE_URL}/account/token/refresh/`, { refresh });
         const newAccess = res.data.access;
         tokens.set(newAccess, null); // keep existing refresh, only update access
         original.headers.Authorization = `Bearer ${newAccess}`;
         return api(original);
       } catch {
         tokens.clear();
+        // Also wipe Zustand's persisted auth state so the reload at /login
+        // does NOT rehydrate with isAuthenticated: true (which would cause
+        // PublicRoute to immediately bounce back to /onboarding → infinite loop).
+        try { localStorage.removeItem('interflow-auth'); } catch {}
         window.location.href = '/login';
       }
     }
@@ -41,17 +45,26 @@ api.interceptors.response.use(
 
 // ─── Auth ─────────────────────────────────────────────────────────
 export const authAPI = {
-  register: (data) => api.post('/auth/register/', data),
-  verifyOTP: (data) => api.post('/auth/otp/verify/', data),
-  resendOTP: (data) => api.post('/auth/otp/resend/', data),
-  login: (data) => api.post('/auth/login/', data),
-  logout: (data) => api.post('/auth/logout/', data),
-  refreshToken: (data) => api.post('/auth/token/refresh/', data),
-  requestPasswordReset: (data) => api.post('/auth/password/reset/', data),
-  confirmPasswordReset: (data) => api.post('/auth/password/reset/confirm/', data),
-  changePassword: (data) => api.post('/auth/password/change/', data),
-  getMe: () => api.get('/auth/me/'),
-  getDashboard: () => api.get('/auth/dashboard/'),
+  register: (data) => api.post('/account/register/', data),
+  verifyOTP: (data) => api.post('/account/verify-otp/', data),
+  resendOTP: (data) => api.post('/account/resend-otp/', data),
+  login: (data) => api.post('/account/login/', data),
+  logout: (data) => api.post('/account/logout/', data),
+  refreshToken: (data) => api.post('/account/token/refresh/', data),
+  requestPasswordReset: (data) => api.post('/account/password-reset/', data),
+  confirmPasswordReset: (data) => api.post('/account/password-reset-confirm/', data),
+  changePassword: (data) => api.post('/account/change-password/', data),
+  getMe: () => api.get('/account/me/'),
+  getDashboard: () => api.get('/account/dashboard/'),
+};
+
+// ─── Artist Relevant Works ─────────────────────────────────────
+export const relevantWorksAPI = {
+  list:   ()           => api.get('/artist/relevant-works/'),
+  create: (data)       => api.post('/artist/relevant-works/', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  detail: (pk)         => api.get(`/artist/relevant-works/${pk}/`),
+  update: (pk, data)   => api.patch(`/artist/relevant-works/${pk}/`, data),
+  delete: (pk)         => api.delete(`/artist/relevant-works/${pk}/`),
 };
 
 // ─── Artist Onboarding ────────────────────────────────────────────

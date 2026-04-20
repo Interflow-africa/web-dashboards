@@ -32,7 +32,7 @@ const fakeTokens = (email) => {
 
 /* ─── Mock Auth API ──────────────────────────────────────────────── */
 export const mockAuthAPI = {
-  async register({ email, password, role, first_name, last_name }) {
+  async register({ email, password, role, first_name, last_name, confirm_password, tos_accepted }) {
     await DELAY();
     if (db.users.find(u => u.email === email)) throw err('An account with this email already exists.');
     const user = { id: Date.now(), email, password, role, first_name, last_name, is_onboarded: false };
@@ -41,9 +41,9 @@ export const mockAuthAPI = {
     return ok({ message: 'Registration successful. Please verify your email.' });
   },
 
-  async verifyOTP({ email, otp }) {
+  async verifyOTP({ email, code }) {
     await DELAY();
-    if (db.otps[email] !== String(otp)) throw err('Invalid or expired OTP.');
+    if (db.otps[email] !== String(code)) throw err('Invalid or expired OTP.');
     const user = db.users.find(u => u.email === email);
     if (!user) throw err('User not found.');
     delete db.otps[email];
@@ -85,13 +85,13 @@ export const mockAuthAPI = {
     return ok({ message: 'Reset instructions sent.' });
   },
 
-  async confirmPasswordReset({ token, password }) {
+  async confirmPasswordReset({ email, code, new_password }) {
     await DELAY();
-    const entry = Object.entries(db.resetTokens).find(([, t]) => t === token);
-    if (!entry) throw err('Invalid or expired reset token.');
-    const [email] = entry;
+    // In mock mode, accept code '123456' for any registered email
+    if (String(code) !== '123456') throw err('Invalid or expired reset code.');
     const user = db.users.find(u => u.email === email);
-    if (user) user.password = password;
+    if (!user) throw err('User not found.');
+    user.password = new_password;
     delete db.resetTokens[email];
     return ok({ message: 'Password reset successful.' });
   },
@@ -141,7 +141,7 @@ export const mockArtistAPI = {
   },
 
   async step1(data) { await DELAY(); return ok({ message: 'Step 1 saved.', ...data }); },
-  async step2(data) { await DELAY(); return ok({ message: 'Step 2 saved.', ...data }); },
+  async step2(data) { await DELAY(); return ok({ message: 'Step 2 saved.', ...data }); }, // expects { ratings: { skill: score } }
   async step3(data) { await DELAY(); return ok({ message: 'Step 3 saved.', ...data }); },
 
   async getMedia() {
@@ -149,7 +149,12 @@ export const mockArtistAPI = {
     return ok([]);
   },
 
-  async uploadMedia(data) { await DELAY(800); return ok({ id: Date.now(), url: '#', type: 'image' }); },
+  async uploadMedia(data) {
+    await DELAY(800);
+    const isFormData = typeof data.get === 'function';
+    const media_type = isFormData ? data.get('media_type') : data.media_type;
+    return ok({ id: Date.now(), url: '#', media_type: media_type || 'image' });
+  },
   async deleteMedia(pk) { await DELAY(300); return ok({ message: 'Deleted.' }); },
 
   async getExperiences() {
@@ -236,7 +241,7 @@ export const mockConnectionsAPI = {
       { id: 3, name: 'City Ballet', role: 'organization',                  location: 'NY', avatar: null, mutual: 5 },
     ]);
   },
-  async send(data) { await DELAY(); return ok({ message: 'Connection request sent.' }); },
+  async send({ receiver_id, ...rest }) { await DELAY(); return ok({ message: 'Connection request sent.' }); },
   async getIncoming() { await DELAY(400); return ok([]); },
   async respond(pk, data) { await DELAY(); return ok({ message: 'Response recorded.' }); },
   async getMyConnections() { await DELAY(400); return ok([]); },
@@ -295,15 +300,41 @@ export const mockSettingsAPI = {
   async setup2FA() { await DELAY(400); return ok({ qr_code: '#', secret: 'MOCK_SECRET' }); },
   async enable2FA(data) { await DELAY(); return ok({ message: '2FA enabled.' }); },
   async disable2FA(data) { await DELAY(); return ok({ message: '2FA disabled.' }); },
-  async deleteAccount(data) { await DELAY(); return ok({ message: 'Account deleted.' }); },
+  async deleteAccount(data) {
+    await DELAY();
+    if (data.confirm !== 'DELETE') throw err('Please type DELETE to confirm account deletion.');
+    return ok({ message: 'Account deleted.' });
+  },
   async deactivateAccount() { await DELAY(); return ok({ message: 'Account deactivated.' }); },
 };
 
 /* ─── Mock Support API ───────────────────────────────────────────── */
 export const mockSupportAPI = {
   async list() { await DELAY(400); return ok([]); },
-  async create(data) { await DELAY(600); return ok({ id: Date.now(), status: 'open', ...data }); },
+  async create(data) {
+    await DELAY(600);
+    const isFormData = typeof data.get === 'function';
+    const category = isFormData ? data.get('category') : data.category;
+    const subject  = isFormData ? data.get('subject')  : data.subject;
+    const message  = isFormData ? data.get('message')  : data.message;
+    return ok({ id: Date.now(), status: 'open', category, subject, message });
+  },
   async detail(pk) { await DELAY(300); return ok({ id: pk, status: 'open', messages: [] }); },
+};
+
+/* ─── Mock Relevant Works API ────────────────────────────────────── */
+export const mockRelevantWorksAPI = {
+  async list() {
+    await DELAY(400);
+    return ok([
+      { id: 1, project_title: 'Sankofa (2025)', organization: 'Lagos Dance Theatre', project_link: 'https://example.com/sankofa', description: 'Two-act contemporary piece.', file_url: null, order: 1 },
+      { id: 2, project_title: 'Echoes — MUSON 2024', organization: 'MUSON Centre', project_link: null, description: 'Live performance at MUSON festival.', file_url: null, order: 2 },
+    ]);
+  },
+  async create(data) { await DELAY(600); return ok({ id: Date.now(), ...Object.fromEntries(data instanceof FormData ? data.entries() : Object.entries(data)) }); },
+  async detail(pk)       { await DELAY(300); return ok({ id: pk, project_title: 'Sample Work', organization: 'Sample Org', description: '', file_url: null }); },
+  async update(pk, data) { await DELAY(400); return ok({ id: pk, ...data }); },
+  async delete(pk)       { await DELAY(300); return ok({ message: 'Deleted.' }); },
 };
 
 /* ─── Mock Onboarding Status API ─────────────────────────────────── */

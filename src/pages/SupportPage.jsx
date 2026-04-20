@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Mail, AlertTriangle, MessageSquare } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import toast from 'react-hot-toast';
+import { supportAPI } from '@/services/index';
 
 const TABS = [
   { key: 'message', label: 'Send us a Message', Icon: Mail },
@@ -53,10 +54,24 @@ const SupportPage = () => {
   const setField = (field) => (e) =>
     setForms((prev) => ({ ...prev, [activeTab]: { ...prev[activeTab], [field]: e.target.value } }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    toast.success('Submitted successfully!');
-    setForms((prev) => ({ ...prev, [activeTab]: { ...INITIAL } }));
+    if (!form.body.trim()) { toast.error('Please write a message before submitting'); return; }
+    try {
+      const fd = new FormData();
+      fd.append('category', activeTab === 'message' ? 'technical' : activeTab === 'bug' ? 'bug' : 'feedback');
+      fd.append('subject', FORM_CONFIG[activeTab].title);
+      fd.append('message', form.body);
+      if (form.firstName) fd.append('first_name', form.firstName);
+      if (form.lastName)  fd.append('last_name', form.lastName);
+      if (form.email)     fd.append('email', form.email);
+      if (form.phone)     fd.append('phone', form.phone);
+      await supportAPI.create(fd);
+      toast.success('Your message has been sent! We\'ll be in touch within 1–2 business days.');
+      setForms(prev => ({ ...prev, [activeTab]: { ...INITIAL } }));
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to submit. Please try again.');
+    }
   };
 
   const { title, subtitle, bodyLabel, bodyPlaceholder } = FORM_CONFIG[activeTab];
