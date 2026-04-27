@@ -125,8 +125,8 @@ export const connectionsAPI = {
 export const opportunitiesAPI = {
   list: (params) => api.get('/opportunities/', { params }),
   detail: (pk) => api.get(`/opportunities/${pk}/`),
-  manage: (params) => api.get('/opportunities/manage/', { params }),
-  create: (data) => api.post('/opportunities/manage/', data),
+  manage: (params) => api.get('/opportunities/', { params }),
+  create: (data, publish = false) => api.post(`/opportunities/create-opportunity/${publish ? '?publish=true' : ''}`, data),
   update: (pk, data) => api.patch(`/opportunities/manage/${pk}/`, data),
   delete: (pk) => api.delete(`/opportunities/manage/${pk}/`),
   publish: (pk) => api.post(`/opportunities/manage/${pk}/publish/`),
@@ -140,6 +140,9 @@ export const applicationsAPI = {
   myApplications: (params) => api.get('/applications/my/', { params }),
   myApplicationDetail: (pk) => api.get(`/applications/my/${pk}/`),
   withdraw: (pk) => api.delete(`/applications/my/${pk}/`),
+  orgApplicationStats: () => api.get('/applications/dashboard/stats/'),
+  orgOpportunities: () => api.get('/applications/dashboard/opportunities/'),
+  orgAllApplications: (params) => api.get('/applications/all/', { params }),
   orgAll: (params) => api.get('/applications/manage/', { params }),
   orgDetail: (pk) => api.get(`/applications/manage/${pk}/`),
   orgByOpportunity: (oppPk, params) => api.get(`/applications/manage/opportunity/${oppPk}/`, { params }),
@@ -176,6 +179,18 @@ export const supportAPI = {
   list: () => api.get('/support/'),
   create: (data) => api.post('/support/', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   detail: (pk) => api.get(`/support/${pk}/`),
+};
+
+// ─── Call For Artists (always public — no auth header needed) ──────
+export const callForArtistsAPI = {
+  getForm: (slug) => api.get(`/interflow_form/forms/${slug}/`),
+  submitForm: (slug, data) =>
+    api.post(`/interflow_form/forms/${slug}/submit/`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  validateToken: (token) => api.get(`/interflow_form/activate/${token}/`),
+  activateAccount: (token, data) =>
+    api.post(`/interflow_form/activate/${token}/`, data),
 };
 
 export default api;

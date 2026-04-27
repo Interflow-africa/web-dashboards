@@ -13,13 +13,36 @@ const STEPS = [
 const OnboardingLayout = ({ children, currentStep = 1 }) => (
   <div className="min-h-screen flex flex-col">
     {/* ── Top nav ── */}
-    <header className="bg-white border-b border-[#EBEBEB] h-[72px] flex items-center px-8 shrink-0">
+    <header className="bg-white border-b border-[#EBEBEB] h-[64px] flex items-center px-4 md:px-8 shrink-0">
       <Logo variant="default" size="md" />
     </header>
 
+    {/* ── Mobile step progress bar ── */}
+    <div className="lg:hidden bg-[#0D0D0D] px-4 py-3">
+      <div className="flex items-center gap-1 mb-2">
+        {STEPS.map((s, i) => {
+          const num    = i + 1;
+          const isDone = num < currentStep;
+          const isActive = num === currentStep;
+          return (
+            <div
+              key={s.n}
+              className={`h-1 flex-1 rounded-full transition-all ${
+                isDone ? 'bg-[#8B6914]' : isActive ? 'bg-[#8B6914]/60' : 'bg-white/15'
+              }`}
+            />
+          );
+        })}
+      </div>
+      <p className="text-white/60 text-[11px]">
+        Step {currentStep} of {STEPS.length} —{' '}
+        <span className="text-white font-medium">{STEPS[currentStep - 1]?.title}</span>
+      </p>
+    </div>
+
     <div className="flex flex-1 overflow-hidden">
-      {/* ── Sidebar ── */}
-      <aside className="w-[270px] shrink-0 bg-[#0D0D0D] flex flex-col py-10 px-7 overflow-y-auto">
+      {/* ── Desktop sidebar (lg+) ── */}
+      <aside className="hidden lg:flex w-[270px] shrink-0 bg-[#0D0D0D] flex-col py-10 px-7 overflow-y-auto">
         {STEPS.map((s, i) => {
           const stepNum  = i + 1;
           const isActive = stepNum === currentStep;
@@ -37,7 +60,6 @@ const OnboardingLayout = ({ children, currentStep = 1 }) => (
                   }}
                 />
               )}
-
               {/* Circle */}
               <div
                 className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-semibold z-10 mt-0.5"
@@ -49,7 +71,6 @@ const OnboardingLayout = ({ children, currentStep = 1 }) => (
               >
                 {s.n}
               </div>
-
               {/* Text */}
               <div className="pb-9">
                 <p
@@ -69,14 +90,14 @@ const OnboardingLayout = ({ children, currentStep = 1 }) => (
 
       {/* ── Main content ── */}
       <main className="relative flex-1 bg-[#F9F7F4] overflow-y-auto">
-        {/* Decorative arcs */}
-        <div className="pointer-events-none absolute top-0 right-0 overflow-hidden" style={{ width: 280, height: 280 }}>
+        {/* Decorative arcs (desktop only) */}
+        <div className="pointer-events-none absolute top-0 right-0 overflow-hidden hidden md:block" style={{ width: 280, height: 280 }}>
           <div className="absolute" style={{ top: -100, right: -100, width: 340, height: 340, border: '1px solid #DDD8CF', borderRadius: '50%' }} />
           <div className="absolute" style={{ top: -65,  right: -65,  width: 260, height: 260, border: '1px solid #E5E0D8', borderRadius: '50%' }} />
           <div className="absolute" style={{ top: -30,  right: -30,  width: 180, height: 180, border: '1px solid #EDE9E2', borderRadius: '50%' }} />
         </div>
 
-        <div className="relative z-10 max-w-[680px] mx-auto px-8 py-10">
+        <div className="relative z-10 max-w-[680px] mx-auto px-4 md:px-8 py-6 md:py-10">
           {children}
         </div>
       </main>

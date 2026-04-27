@@ -134,10 +134,10 @@ const PermCheck = ({ checked }) => (
 // ── Modal wrapper ──────────────────────────────────────────────────────────
 const Modal = ({ title, onClose, children }) => (
   <div
-    className="fixed inset-0 z-50 flex items-center justify-center"
+    className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
     style={{ background: 'rgba(0,0,0,0.45)' }}
   >
-    <div className="bg-white rounded-2xl shadow-xl w-full mx-4" style={{ maxWidth: 600 }}>
+    <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-[600px] max-h-[92vh] overflow-y-auto">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
@@ -360,10 +360,10 @@ const AddImageModal = ({ onClose }) => {
 
 // ── TAB: Overview ──────────────────────────────────────────────────────────
 const OverviewTab = ({ openModal }) => (
-  <div className="flex gap-6" style={{ flexWrap: 'wrap' }}>
+  <div className="flex flex-col lg:flex-row gap-6">
 
     {/* LEFT column */}
-    <div className="flex flex-col gap-5" style={{ flex: '0 0 360px', maxWidth: 380 }}>
+    <div className="flex flex-col gap-5 w-full lg:w-[360px] lg:shrink-0">
       {/* Avatar & name */}
       <div className="flex flex-col items-center gap-2 bg-white rounded-2xl p-6 shadow-sm">
         <div

@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
 import { orgAPI } from '@/services/index';
+import getApiError from '@/utils/apiError';
 
 /* ─── Decorative ring SVG (top-right of content area) ─────────────── */
 const RingDecoration = () => (
@@ -170,7 +171,7 @@ const Step1 = ({ onNext }) => {
       toast.success('Company details saved!');
       onNext();
     } catch (e) {
-      toast.error(e?.response?.data?.message || 'Failed to save details');
+      toast.error(getApiError(e, 'Failed to save details'));
     } finally {
       setLoading(false);
     }
@@ -244,7 +245,7 @@ const Step1 = ({ onNext }) => {
         </div>
 
         {/* City | Province */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>City</label>
             <div className="relative">
@@ -299,12 +300,11 @@ const Step1 = ({ onNext }) => {
         {/* Business address */}
         <div>
           <label className={labelCls}>Business Address</label>
-          <div className="relative">
-            <select className={selectCls} {...register('business_address')}>
-              <option value="">Select or type address</option>
-            </select>
-            <svg className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" width="14" height="8" viewBox="0 0 14 8" fill="none"><path d="M1 1L7 7L13 1" stroke="#888" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </div>
+          <input
+            className={inputCls}
+            placeholder="Enter business address"
+            {...register('business_address')}
+          />
         </div>
 
         {/* Website */}
@@ -353,7 +353,7 @@ const Step2 = ({ onNext, onBack }) => {
       toast.success('Goals saved!');
       onNext();
     } catch (e) {
-      toast.error(e?.response?.data?.message || 'Failed to save');
+      toast.error(getApiError(e, 'Failed to save'));
     } finally {
       setLoading(false);
     }
@@ -451,7 +451,7 @@ const Step3 = ({ onNext, onBack }) => {
       toast.success('Verification submitted!');
       onNext();
     } catch (e) {
-      toast.error(e?.response?.data?.message || 'Submission failed');
+      toast.error(getApiError(e, 'Submission failed'));
     } finally {
       setLoading(false);
     }

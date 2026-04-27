@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import getApiError from '@/utils/apiError';
 import AuthSplitLayout from '@/components/layout/AuthSplitLayout';
 import FloatingInput from '@/components/common/FloatingInput';
 import { authAPI } from '@/services/index';
@@ -47,7 +48,7 @@ const ResetPasswordPage = () => {
       toast.success('Password reset successfully!');
       navigate('/login');
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Invalid code or code has expired.');
+      toast.error(getApiError(err, 'Invalid code or code has expired.'));
     }
   };
 

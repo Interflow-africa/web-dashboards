@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import getApiError from '@/utils/apiError';
 import AuthSplitLayout from '@/components/layout/AuthSplitLayout';
 import FloatingInput from '@/components/common/FloatingInput';
 import { useForgotPassword } from '@/hooks/auth';
@@ -27,7 +28,7 @@ const ForgotPasswordPage = () => {
       await forgotPassword({ email: data.email });
       navigate('/forgot-password/sent', { state: { email: data.email } });
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Something went wrong. Please try again.');
+      toast.error(getApiError(err, 'Something went wrong. Please try again.'));
     }
   };
 

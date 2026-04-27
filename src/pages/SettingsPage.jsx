@@ -3,6 +3,7 @@ import { X, ChevronDown } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import toast from 'react-hot-toast';
 import { settingsAPI, authAPI } from '@/services/index';
+import getApiError from '@/utils/apiError';
 
 /* ── Toggle Switch ── */
 const Toggle = ({ on, onToggle }) => (
@@ -152,7 +153,7 @@ const SettingsPage = () => {
       toast.success('Profile updated!');
       close();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to save profile');
+      toast.error(getApiError(err, 'Failed to save profile'));
     }
   };
 
@@ -167,7 +168,7 @@ const SettingsPage = () => {
       toast.success('Contact info updated!');
       close();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to save contact info');
+      toast.error(getApiError(err, 'Failed to save contact info'));
     }
   };
 
@@ -181,7 +182,7 @@ const SettingsPage = () => {
       toast.success('Notification preferences saved!');
       close();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to save preferences');
+      toast.error(getApiError(err, 'Failed to save preferences'));
     }
   };
 
@@ -191,7 +192,7 @@ const SettingsPage = () => {
       toast.success('URL updated!');
       close();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to update URL');
+      toast.error(getApiError(err, 'Failed to update URL'));
     }
   };
 
@@ -201,7 +202,7 @@ const SettingsPage = () => {
       toast.success('Email update requested. Our team will confirm the change.');
       close();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to update email');
+      toast.error(getApiError(err, 'Failed to update email'));
     }
   };
 
@@ -213,7 +214,7 @@ const SettingsPage = () => {
       toast.success('Account closure requested.');
       close();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to close account. Please check your password.');
+      toast.error(getApiError(err, 'Failed to close account. Please check your password.'));
     }
   };
 
@@ -311,7 +312,7 @@ const SettingsPage = () => {
                   onChange={(e) => setPortContact((p) => ({ ...p, address: e.target.value }))}
                   placeholder="Street address"
                 />
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <Field
                     label="City"
                     value={portContact.city}
