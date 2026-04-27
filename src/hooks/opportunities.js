@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { opportunitiesAPI, applicationsAPI } from '@/services/index';
+import getApiError from '@/utils/apiError';
 
 /* ─── Query Keys ────────────────────────────────────────────────── */
 export const OPP_KEYS = {
@@ -46,7 +47,7 @@ export const useCreateOpportunity = () => {
   return useMutation({
     mutationFn: (data) => opportunitiesAPI.create(data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['opportunities'] }); toast.success('Opportunity created!'); },
-    onError: (e) => toast.error(e?.response?.data?.message || 'Could not create opportunity.'),
+    onError: (e) => toast.error(getApiError(e, 'Could not create opportunity.')),
   });
 };
 
@@ -101,7 +102,7 @@ export const useApply = () => {
   return useMutation({
     mutationFn: (data) => applicationsAPI.apply(data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: APP_KEYS.mine }); toast.success('Application submitted!'); },
-    onError: (e) => toast.error(e?.response?.data?.message || 'Could not submit application.'),
+    onError: (e) => toast.error(getApiError(e, 'Could not submit application.')),
   });
 };
 

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Mail } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import getApiError from '@/utils/apiError';
 import AuthSplitLayout from '@/components/layout/AuthSplitLayout';
 import FloatingInput from '@/components/common/FloatingInput';
 import { authAPI } from '@/services/index';
@@ -229,10 +230,7 @@ const RegisterForm = ({ role, onSuccess }) => {
       await authAPI.register({ email: data.email, password: data.password, confirm_password: data.confirmPassword, role, tos_accepted: true });
       onSuccess(data.email);
     } catch (err) {
-      const msg = err?.response?.data?.email?.[0]
-        || err?.response?.data?.message
-        || 'Registration failed';
-      toast.error(msg);
+      toast.error(getApiError(err, 'Registration failed'));
     }
   };
 
@@ -420,7 +418,7 @@ const OTPVerify = ({ email }) => {
       await verifyOTP({ email, code: data.code });
       // useVerifyOTP hook auto-navigates to /register/success on success
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Invalid code. Please try again.');
+      toast.error(getApiError(err, 'Invalid code. Please try again.'));
     }
   };
 
@@ -431,7 +429,7 @@ const OTPVerify = ({ email }) => {
       await authAPI.resendOTP({ email });
       toast.success('Verification code resent!');
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to resend code.');
+      toast.error(getApiError(err, 'Failed to resend code.'));
     } finally {
       setResending(false);
     }

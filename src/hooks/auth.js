@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { authAPI } from '@/services/index';
 import useAuthStore from '@/store/authStore';
 import tokens from '@/utils/tokens';
+import getApiError from '@/utils/apiError';
 
 /* ─── Query Keys ────────────────────────────────────────────────── */
 export const AUTH_KEYS = {
@@ -53,7 +54,7 @@ export const useLogin = () => {
       }
     },
     onError: (err) => {
-      toast.error(err?.response?.data?.message || 'Invalid credentials. Please try again.');
+      toast.error(getApiError(err, 'Invalid credentials. Please try again.'));
     },
   });
 };
@@ -89,7 +90,7 @@ export const useResendOTP = () => {
   return useMutation({
     mutationFn: (data) => authAPI.resendOTP(data),
     onSuccess: () => toast.success('Verification code resent!'),
-    onError: (err) => toast.error(err?.response?.data?.message || 'Could not resend code.'),
+    onError: (err) => toast.error(getApiError(err, 'Could not resend code.')),
   });
 };
 
@@ -111,7 +112,7 @@ export const useResetPassword = () => {
       navigate('/login');
     },
     onError: (err) => {
-      toast.error(err?.response?.data?.message || 'Reset failed. The link may have expired.');
+      toast.error(getApiError(err, 'Reset failed. The link may have expired.'));
     },
   });
 };
@@ -121,7 +122,7 @@ export const useChangePassword = () => {
   return useMutation({
     mutationFn: (data) => authAPI.changePassword(data),
     onSuccess: () => toast.success('Password updated!'),
-    onError: (err) => toast.error(err?.response?.data?.message || 'Could not update password.'),
+    onError: (err) => toast.error(getApiError(err, 'Could not update password.')),
   });
 };
 

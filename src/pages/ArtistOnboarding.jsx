@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { ArrowRight, Image, Play, UserPlus, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
+import getApiError from '@/utils/apiError';
 import OnboardingLayout from '@/components/layout/OnboardingLayout';
 import FloatingInput from '@/components/common/FloatingInput';
 import FloatingSelect from '@/components/common/FloatingSelect';
@@ -29,8 +30,12 @@ const MultiCheckbox = ({ options, selected, onChange, columns = 2 }) => {
   const toggle = (val) =>
     onChange(selected.includes(val) ? selected.filter(v => v !== val) : [...selected, val]);
 
+  const colClass = columns === 3 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'
+    : columns === 2 ? 'grid-cols-1 sm:grid-cols-2'
+    : 'grid-cols-1';
+
   return (
-    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+    <div className={`grid gap-2 ${colClass}`}>
       {options.map(({ label, value }) => {
         const active = selected.includes(value);
         return (
@@ -69,167 +74,207 @@ const SectionLabel = ({ children }) => (
    DISCIPLINE CONFIG — drives Steps 2 & 3 dynamically
    ═══════════════════════════════════════════════════════════════════ */
 const DISCIPLINES = [
-  { label: 'Dancer',                      value: 'dancer' },
-  { label: 'Poet / Spoken Word Artist',   value: 'poet' },
-  { label: 'Musician',                    value: 'musician' },
-  { label: 'Singer / Vocalist',           value: 'singer' },
-  { label: 'Theatre Performer / Actor',   value: 'theatre_performer' },
-  { label: 'Performance Artist',          value: 'performance_artist' },
-  { label: 'Storyteller',                 value: 'storyteller' },
-  { label: 'Multidisciplinary Performer', value: 'multidisciplinary' },
+  { label: "Dancer", value: "dancer" },
+  { label: "Poet / Spoken Word Artist", value: "poet_spoken_word" },
+  { label: "Musician", value: "musician" },
+  { label: "Singer / Vocalist", value: "singer_vocalist" },
+  { label: "Theatre Performer / Actor", value: "theatre_performer" },
+  { label: "Performance Artist", value: "performance_artist" },
+  { label: "Storyteller", value: "storyteller" },
+  { label: "Multidisciplinary Performer", value: "multidisciplinary" },
 ];
 
 const DISCIPLINE_CONFIG = {
   dancer: {
-    stylesLabel: 'Dance Style',
+    stylesLabel: "Dance Style",
     styles: [
-      { label: 'Afro Dance',                value: 'afro_dance' },
-      { label: 'Contemporary',              value: 'contemporary' },
-      { label: 'Hip Hop',                   value: 'hip_hop' },
-      { label: 'Street Dance',              value: 'street_dance' },
-      { label: 'Traditional Dance',         value: 'traditional_dance' },
-      { label: 'Ballet',                    value: 'ballet' },
-      { label: 'Experimental / Fusion',     value: 'experimental_fusion' },
-      { label: 'Choreographic Performance', value: 'choreographic_performance' },
+      { label: "Afro Dance", value: "afro_dance" },
+      { label: "Contemporary", value: "contemporary" },
+      { label: "Hip Hop", value: "hip_hop" },
+      { label: "Street Dance", value: "street_dance" },
+      { label: "Traditional Dance", value: "traditional_dance" },
+      { label: "Ballet", value: "ballet" },
+      { label: "Experimental / Fusion", value: "experimental_fusion" },
+      {
+        label: "Choreographic Performance",
+        value: "choreographic_performance",
+      },
     ],
     roles: [
-      { label: 'Choreographer',    value: 'choreographer' },
-      { label: 'Dance Instructor', value: 'dance_instructor' },
-      { label: 'Freestyle Dancer', value: 'freestyle_dancer' },
-      { label: 'Performer',        value: 'performer' },
+      { label: "Choreographer", value: "choreographer" },
+      { label: "Dance Instructor", value: "dance_instructor" },
+      { label: "Freestyle Dancer", value: "freestyle_dancer" },
+      { label: "Performer", value: "performer" },
     ],
-    proficiencySkills: ['Dance', 'Choreography', 'Stage Presence', 'Teaching'],
+    proficiencySkills: ["Dance", "Choreography", "Stage Presence", "Teaching"],
     hasInstruments: false,
     hasMusicStyles: false,
   },
-  poet: {
-    stylesLabel: 'Performance Style',
+  poet_spoken_word: {
+    stylesLabel: "Performance Style",
     styles: [
-      { label: 'Spoken Word',         value: 'spoken_word' },
-      { label: 'Slam Poetry',         value: 'slam_poetry' },
-      { label: 'Performance Poetry',  value: 'performance_poetry' },
-      { label: 'Storytelling',        value: 'storytelling' },
-      { label: 'Experimental Poetry', value: 'experimental_poetry' },
-      { label: 'Musical Poetry',      value: 'musical_poetry' },
+      { label: "Spoken Word", value: "spoken_word" },
+      { label: "Slam Poetry", value: "slam_poetry" },
+      { label: "Performance Poetry", value: "performance_poetry" },
+      { label: "Storytelling", value: "storytelling" },
+      { label: "Experimental Poetry", value: "experimental_poetry" },
+      { label: "Musical Poetry", value: "musical_poetry" },
     ],
     roles: [
-      { label: 'Performer', value: 'performer' },
-      { label: 'Writer',    value: 'writer' },
+      { label: "Performer", value: "performer" },
+      { label: "Writer", value: "writer" },
     ],
-    proficiencySkills: ['Performance', 'Writing', 'Stage Presence', 'Audience Engagement'],
+    proficiencySkills: [
+      "Performance",
+      "Writing",
+      "Stage Presence",
+      "Audience Engagement",
+    ],
     hasInstruments: false,
     hasMusicStyles: false,
   },
   musician: {
-    stylesLabel: 'Instrument',
+    stylesLabel: "Instrument",
     styles: [],
     roles: [
-      { label: 'Performer',   value: 'performer' },
-      { label: 'Composer',    value: 'composer' },
-      { label: 'Band Member', value: 'band_member' },
-      { label: 'Producer',    value: 'producer' },
+      { label: "Performer", value: "performer" },
+      { label: "Composer", value: "composer" },
+      { label: "Band Member", value: "band_member" },
+      { label: "Producer", value: "producer" },
     ],
-    proficiencySkills: ['Instrument', 'Composition', 'Production', 'Performance'],
+    proficiencySkills: [
+      "Instrument",
+      "Composition",
+      "Production",
+      "Performance",
+    ],
     hasInstruments: true,
     hasMusicStyles: false,
     instruments: [
-      { label: 'Guitar',                 value: 'guitar' },
-      { label: 'Piano / Keyboard',       value: 'piano_keyboard' },
-      { label: 'Drums / Percussion',     value: 'drums_percussion' },
-      { label: 'Bass',                   value: 'bass' },
-      { label: 'Violin',                 value: 'violin' },
-      { label: 'Saxophone',              value: 'saxophone' },
-      { label: 'Trumpet',                value: 'trumpet' },
-      { label: 'Traditional Instrument', value: 'traditional_instrument' },
+      { label: "Guitar", value: "guitar" },
+      { label: "Piano / Keyboard", value: "piano_keyboard" },
+      { label: "Drums / Percussion", value: "drums_percussion" },
+      { label: "Bass", value: "bass" },
+      { label: "Violin", value: "violin" },
+      { label: "Saxophone", value: "saxophone" },
+      { label: "Trumpet", value: "trumpet" },
+      { label: "Traditional Instrument", value: "traditional_instrument" },
     ],
   },
-  singer: {
-    stylesLabel: 'Vocal Type',
+  singer_vocalist: {
+    stylesLabel: "Vocal Type",
     styles: [
-      { label: 'Lead Vocalist',   value: 'lead_vocalist' },
-      { label: 'Backup Vocalist', value: 'backup_vocalist' },
-      { label: 'Choir Singer',    value: 'choir_singer' },
-      { label: 'Spoken Vocalist', value: 'spoken_vocalist' },
+      { label: "Lead Vocalist", value: "lead_vocalist" },
+      { label: "Backup Vocalist", value: "backup_vocalist" },
+      { label: "Choir Singer", value: "choir_singer" },
+      { label: "Spoken Vocalist", value: "spoken_vocalist" },
+      { label: "Other", value: "other" },
     ],
-    roles: [],
-    proficiencySkills: ['Vocals', 'Stage Presence', 'Performance', 'Songwriting'],
+    roles: [
+      { label: "Lead Vocalist", value: "lead_vocalist" },
+      { label: "Backup Vocalist", value: "backup_vocalist" },
+      { label: "Choir Singer", value: "choir_singer" },
+      { label: "Spoken Vocalist", value: "spoken_vocalist" },
+      { label: "Other", value: "other" },
+    ],
+    proficiencySkills: [
+      "Vocals",
+      "Stage Presence",
+      "Performance",
+      "Songwriting",
+    ],
     hasInstruments: false,
     hasMusicStyles: true,
     musicStyles: [
-      { label: 'Afrobeat', value: 'afrobeat' },
-      { label: 'Jazz',     value: 'jazz' },
-      { label: 'Soul',     value: 'soul' },
+      { label: "Afrobeat", value: "afrobeat" },
+      { label: "Jazz", value: "jazz" },
+      { label: "Soul", value: "soul" },
     ],
   },
   theatre_performer: {
-    stylesLabel: 'Theatre Style',
+    stylesLabel: "Theatre Style",
     styles: [
-      { label: 'Drama',            value: 'drama' },
-      { label: 'Musical Theatre',  value: 'musical_theatre' },
-      { label: 'Improv',           value: 'improv' },
-      { label: 'Physical Theatre', value: 'physical_theatre' },
-      { label: 'Comedy',           value: 'comedy' },
+      { label: "Stage Acting", value: "stage_acting" },
+      { label: "Screen Acting", value: "screen_acting" },
+      { label: "Classical Theatre", value: "classical_theatre" },
+      { label: "Improv Comedy", value: "improv_comedy" },
+      { label: "Experimental Theatre", value: "experimental_theatre" },
     ],
     roles: [
-      { label: 'Lead Actor',       value: 'lead_actor' },
-      { label: 'Supporting Actor', value: 'supporting_actor' },
-      { label: 'Director',         value: 'director' },
-      { label: 'Stage Manager',    value: 'stage_manager' },
+      { label: "Actor", value: "actor" },
+      { label: "Writer", value: "writer" },
+      { label: "Performer", value: "performer" },
     ],
-    proficiencySkills: ['Acting', 'Stage Presence', 'Directing', 'Character Development'],
+    proficiencySkills: [
+      "Acting",
+      "Stage Presence",
+      "Directing",
+      "Character Development",
+    ],
     hasInstruments: false,
     hasMusicStyles: false,
   },
   performance_artist: {
-    stylesLabel: 'Performance Type',
+    stylesLabel: "Performance Type",
     styles: [
-      { label: 'Visual Performance',     value: 'visual_performance' },
-      { label: 'Body Art',               value: 'body_art' },
-      { label: 'Immersive Art',          value: 'immersive_art' },
-      { label: 'Durational Performance', value: 'durational_performance' },
+      { label: "Conceptual Performance", value: "conceptual_performance" },
+      { label: "Body Art", value: "body_art" },
+      { label: "Live Art", value: "live_art" },
+      { label: "Installation", value: "installation" },
+      { label: "Experimental", value: "experimental" },
     ],
     roles: [
-      { label: 'Solo Performer',       value: 'solo_performer' },
-      { label: 'Collaborative Artist', value: 'collaborative_artist' },
-      { label: 'Director',             value: 'director' },
+      { label: "Performer", value: "performer" },
+      { label: "Director", value: "director" },
     ],
-    proficiencySkills: ['Conceptual Art', 'Performance', 'Audience Engagement', 'Creative Direction'],
+    proficiencySkills: [
+      "Conceptual Art",
+      "Performance",
+      "Audience Engagement",
+      "Creative Direction",
+    ],
     hasInstruments: false,
     hasMusicStyles: false,
   },
   storyteller: {
-    stylesLabel: 'Storytelling Style',
+    stylesLabel: "Storytelling Style",
     styles: [
-      { label: 'Oral Tradition',         value: 'oral_tradition' },
-      { label: 'Narrative Performance',  value: 'narrative_performance' },
-      { label: 'Digital Storytelling',   value: 'digital_storytelling' },
-      { label: 'Community Storytelling', value: 'community_storytelling' },
+      { label: "Oral Tradition", value: "oral_tradition" },
+      { label: "Folk Storytelling", value: "folk_storytelling" },
+      { label: "Digital Storytelling", value: "digital_storytelling" },
+      {
+        label: "Contemporary Storytelling",
+        value: "contemporary_storytelling",
+      },
     ],
     roles: [
-      { label: 'Performer', value: 'performer' },
-      { label: 'Writer',    value: 'writer' },
-      { label: 'Educator',  value: 'educator' },
+      { label: "Performer", value: "performer" },
+      { label: "Writer", value: "writer" },
     ],
-    proficiencySkills: ['Narrative', 'Performance', 'Writing', 'Audience Engagement'],
+    proficiencySkills: [
+      "Narrative",
+      "Performance",
+      "Writing",
+      "Audience Engagement",
+    ],
     hasInstruments: false,
     hasMusicStyles: false,
   },
   multidisciplinary: {
-    stylesLabel: 'Performance Style',
+    stylesLabel: "Performance Style",
     styles: [
-      { label: 'Live Performance',  value: 'live_performance' },
-      { label: 'Experimental',      value: 'experimental' },
-      { label: 'Collaborative',     value: 'collaborative' },
-      { label: 'Interdisciplinary', value: 'interdisciplinary' },
+      { label: "Mixed Media", value: "mixed_media" },
+      { label: "Experimental", value: "experimental" },
+      { label: "Cross-Genre", value: "cross_genre" },
+      { label: "Hybrid Art", value: "hybrid_art" },
     ],
     roles: [
-      { label: 'Performer',     value: 'performer' },
-      { label: 'Director',      value: 'director' },
-      { label: 'Choreographer', value: 'choreographer' },
-      { label: 'Composer',      value: 'composer' },
-      { label: 'Writer',        value: 'writer' },
+      { label: "Performer", value: "performer" },
+      { label: "Director", value: "director" },
+      { label: "Composer", value: "composer" },
+      { label: "Writer", value: "writer" },
     ],
-    proficiencySkills: ['Performance', 'Choreography', 'Music', 'Visual Art'],
+    proficiencySkills: ["Performance", "Choreography", "Music", "Visual Art"],
     hasInstruments: false,
     hasMusicStyles: false,
   },
@@ -258,30 +303,31 @@ const PRONOUN_OPTIONS = [
   { value: 'he_him',            label: 'He/Him' },
   { value: 'she_her',           label: 'She/Her' },
   { value: 'they_them',         label: 'They/Them' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+  { value: 'other', label: 'Prefer not to say' },
 ];
 
 const INDUSTRY_FOCUS_OPTIONS = [
-  { label: 'Live Performance',                   value: 'live_performance' },
-  { label: 'Music Industry',                     value: 'music_industry' },
-  { label: 'Performing Arts',                    value: 'performing_arts' },
-  { label: 'Festivals & Cultural Events',        value: 'festivals_cultural' },
-  { label: 'Theatre',                            value: 'theatre' },
-  { label: 'Arts Education',                     value: 'arts_education' },
-  { label: 'Digital Performance / Online Shows', value: 'digital_performance' },
+  { label: "Live Performance", value: "live_performance" },
+  { label: "Music Industry", value: "music_industry" },
+  { label: "Performing Arts", value: "performing_arts" },
+  { label: "Festivals & Cultural Events", value: "festivals_cultural_events" },
+  { label: "Theatre", value: "theatre" },
+  { label: "Arts Education", value: "arts_education" },
+  { label: "Digital Performance / Online Shows", value: "digital_performance" },
 ];
 
 const SPECIAL_SKILLS_OPTIONS = [
-  { label: 'Improvisation',             value: 'improvisation' },
-  { label: 'Live Stage Performance',    value: 'live_stage' },
-  { label: 'Freestyle / Battle',        value: 'freestyle_battle' },
-  { label: 'Songwriting',               value: 'songwriting' },
-  { label: 'Choreography',              value: 'choreography' },
-  { label: 'Stage Presence',            value: 'stage_presence' },
-  { label: 'Audience Engagement',       value: 'audience_engagement' },
-  { label: 'Collaborative Performance', value: 'collaborative_performance' },
-  { label: 'Workshop Facilitation',     value: 'workshop_facilitation' },
-  { label: 'Creative Direction',        value: 'creative_direction' },
+  { label: "Improvisation", value: "improvisation" },
+  { label: "Live Stage Performance", value: "live_stage_performance" },
+  { label: "Freestyle / Battle", value: "freestyle_battle" },
+  { label: "Songwriting", value: "songwriting" },
+  { label: "Choreography", value: "choreography" },
+  { label: "Stage Presence", value: "stage_presence" },
+  { label: "Audience Engagement", value: "audience_engagement" },
+  { label: "Collaborative Performance", value: "collaborative_performance" },
+  { label: "Workshop Facilitation", value: "workshop_facilitation" },
+  { label: "Creative Direction", value: "creative_direction" },
+  { label: "Other", value: "other" }
 ];
 
 const PORTFOLIO_FOCUS_OPTIONS = [
@@ -338,7 +384,7 @@ const Step1 = ({ onNext }) => {
       });
       onNext(form.primaryDiscipline);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to save details');
+      toast.error(getApiError(err, 'Failed to save details'));
     }
   };
 
@@ -353,13 +399,13 @@ const Step1 = ({ onNext }) => {
 
       <div className="bg-white rounded-2xl border border-[#EBEBEB] p-8 space-y-5">
         {/* Name */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FloatingInput label="First name*" value={form.firstName} onChange={e => set('firstName', e.target.value)} />
           <FloatingInput label="Last name*"  value={form.lastName}  onChange={e => set('lastName',  e.target.value)} />
         </div>
 
         {/* Location */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FloatingInput label="Country" value={form.country} onChange={e => set('country', e.target.value)} />
           <FloatingInput label="City"    value={form.city}    onChange={e => set('city',    e.target.value)} />
         </div>
@@ -469,7 +515,7 @@ const Step2 = ({ onNext, discipline }) => {
       await artistAPI.step2({ ratings: ratingsPayload });
       onNext();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to save proficiency');
+      toast.error(getApiError(err, 'Failed to save proficiency'));
     }
   };
 
@@ -526,7 +572,7 @@ const Step3 = ({ onNext, onSkip, discipline }) => {
       });
       onNext();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to save skills');
+      toast.error(getApiError(err, 'Failed to save skills'));
     }
   };
 
@@ -670,7 +716,7 @@ const Step4 = ({ onNext, onSkip }) => {
       }
       onNext();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Upload failed');
+      toast.error(getApiError(err, 'Upload failed'));
     }
   };
 
@@ -726,7 +772,7 @@ const Step5 = ({ onNext, onSkip }) => {
       await artistAPI.addExperience(payload);
       onNext();
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to save experience');
+      toast.error(getApiError(err, 'Failed to save experience'));
     }
   };
 
@@ -817,7 +863,7 @@ const Step6 = ({ onNext, onSkip }) => {
       </h2>
       <p className="text-[13.5px] text-[#888] mb-8 text-center">Select connections from the list to get started.</p>
       <div className="bg-white rounded-2xl border border-[#EBEBEB] p-8">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {MOCK_CONNECTIONS.map(c => (
             <div key={c.id} className="rounded-xl border border-[#EBEBEB] overflow-hidden hover:shadow-md transition-shadow">
               <div className="relative h-[140px] bg-[#1a1a1a]">

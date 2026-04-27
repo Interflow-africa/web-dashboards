@@ -3,6 +3,7 @@ import { Mail, AlertTriangle, MessageSquare } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import toast from 'react-hot-toast';
 import { supportAPI } from '@/services/index';
+import getApiError from '@/utils/apiError';
 
 const TABS = [
   { key: 'message', label: 'Send us a Message', Icon: Mail },
@@ -70,7 +71,7 @@ const SupportPage = () => {
       toast.success('Your message has been sent! We\'ll be in touch within 1–2 business days.');
       setForms(prev => ({ ...prev, [activeTab]: { ...INITIAL } }));
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to submit. Please try again.');
+      toast.error(getApiError(err, 'Failed to submit. Please try again.'));
     }
   };
 

@@ -17,6 +17,7 @@ import {
   settingsAPI    as realSettingsAPI,
   supportAPI     as realSupportAPI,
   relevantWorksAPI as realRelevantWorksAPI,
+  callForArtistsAPI,  // always real — public endpoints, no mock needed
 } from './api';
 
 import {
@@ -52,3 +53,4 @@ export const supportAPI      = USE_MOCK ? mockSupportAPI      : realSupportAPI;
 export const relevantWorksAPI = USE_MOCK ? mockRelevantWorksAPI : realRelevantWorksAPI;
 
 export { USE_MOCK };
+export { callForArtistsAPI };

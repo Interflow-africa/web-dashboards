@@ -43,7 +43,7 @@ export const PortfolioPage = () => {
 
   return (
     <DashboardLayout>
-      <div style={{ maxWidth: '960px' }}>
+      <div style={{ maxWidth: '960px', width: '100%' }}>
         {/* Profile Header */}
         <div className="section-card" style={{ marginBottom: '20px', overflow: 'visible' }}>
           <div style={{ height: '160px', background: 'linear-gradient(135deg, var(--dark) 0%, var(--dark-3) 100%)', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0', position: 'relative' }}>
@@ -60,7 +60,7 @@ export const PortfolioPage = () => {
             </div>
           </div>
           <div style={{ padding: '52px 28px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: '700', color: 'var(--dark)' }}>{name || 'Your Name'}</h2>
                 <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>{profile?.job_title || 'Artist'} · {profile?.city}{profile?.country ? `, ${profile.country}` : ''}</p>
@@ -76,7 +76,7 @@ export const PortfolioPage = () => {
             </div>
           </div>
           {/* Tabs */}
-          <div style={{ display: 'flex', gap: '0', padding: '0 28px', borderTop: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', gap: '0', padding: '0 12px', borderTop: '1px solid var(--border)', overflowX: 'auto' }}>
             {['bio','career','media','connections'].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: '14px 20px', fontSize: '14px', fontWeight: activeTab===tab?'600':'400', color: activeTab===tab?'var(--gold)':'var(--text-muted)', borderBottom: `2px solid ${activeTab===tab?'var(--gold)':'transparent'}`, background: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', textTransform: 'capitalize', transition: 'all var(--transition)' }}>
                 {tab === 'career' ? 'Career and Education' : tab.charAt(0).toUpperCase()+tab.slice(1)}
@@ -150,255 +150,6 @@ export const PortfolioPage = () => {
   );
 };
 
-// ─── Network Page ─────────────────────────────────────────────────
-export const NetworkPage = () => {
-  const [tab, setTab] = useState('discover');
-  const [users, setUsers] = useState([]);
-  const [connections, setConnections] = useState([]);
-  const [incoming, setIncoming] = useState([]);
-  const [connected, setConnected] = useState(new Set());
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([
-      connectionsAPI.discover(),
-      connectionsAPI.getMyConnections(),
-      connectionsAPI.getIncoming(),
-    ]).then(([d, c, i]) => {
-      setUsers(d.data.data || []);
-      setConnections(c.data.data || []);
-      setIncoming(i.data.data || []);
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
-
-  const handleConnect = async (id) => {
-    try { await connectionsAPI.send({ receiver_id: id }); setConnected(s => new Set([...s, id])); toast.success('Request sent!'); }
-    catch { toast.error('Could not send request'); }
-  };
-
-  const handleRespond = async (id, action) => {
-    try {
-      await connectionsAPI.respond(id, { action });
-      if (action === 'accept') { toast.success('Connection accepted!'); setIncoming(i => i.filter(x => x.id !== id)); }
-      else { setIncoming(i => i.filter(x => x.id !== id)); }
-    } catch { toast.error('Action failed'); }
-  };
-
-  const tabs = [
-    { key: 'discover', label: `Discover` },
-    { key: 'connections', label: `My Connections (${connections.length})` },
-    { key: 'incoming', label: `Requests (${incoming.length})` },
-  ];
-
-  return (
-    <DashboardLayout>
-      <div className="dash-page-header"><h1 className="dash-page-title">My Network</h1></div>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '0' }}>
-        {tabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)} style={{ padding: '10px 20px', fontSize: '14px', fontWeight: tab===t.key?'600':'400', color: tab===t.key?'var(--gold)':'var(--text-muted)', borderBottom: `2px solid ${tab===t.key?'var(--gold)':'transparent'}`, background: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', transition: 'all var(--transition)' }}>
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {loading ? <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>Loading...</div> : (
-        <>
-          {tab === 'discover' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px,1fr))', gap: '16px' }}>
-              {users.map(u => {
-                const name = u.display_name || u.email; const init = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-                return (
-                  <div key={u.id} className="section-card" style={{ padding: '20px', textAlign: 'center' }}>
-                    <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--gold)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: '700', margin: '0 auto 12px' }}>{init}</div>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--dark)', marginBottom: '4px' }}>{name}</div>
-                    <div className="badge badge-grey" style={{ marginBottom: '14px', display: 'inline-block' }}>{u.role}</div>
-                    <button className={`btn btn-sm ${connected.has(u.id)?'btn-outline':'btn-primary'}`} style={{ width: '100%' }} onClick={() => !connected.has(u.id) && handleConnect(u.id)} disabled={connected.has(u.id)}>
-                      {connected.has(u.id) ? '✓ Sent' : '+ Connect'}
-                    </button>
-                  </div>
-                );
-              })}
-              {users.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>No new users to discover right now.</div>}
-            </div>
-          )}
-
-          {tab === 'connections' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px,1fr))', gap: '16px' }}>
-              {connections.map(c => {
-                const other = c.sender.id === c.receiver.id ? c.receiver : c.sender; const init = (other.display_name||other.email).charAt(0).toUpperCase();
-                return (
-                  <div key={c.id} className="section-card" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--gold)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', flexShrink: 0 }}>{init}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--dark)' }}>{other.display_name || other.email}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{other.role}</div>
-                    </div>
-                  </div>
-                );
-              })}
-              {connections.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>No connections yet. Start connecting!</div>}
-            </div>
-          )}
-
-          {tab === 'incoming' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {incoming.map(c => {
-                const sender = c.sender; const init = (sender.display_name||sender.email).charAt(0).toUpperCase();
-                return (
-                  <div key={c.id} className="section-card" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--gold)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', flexShrink: 0 }}>{init}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--dark)' }}>{sender.display_name || sender.email}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{sender.role} · wants to connect</div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button className="btn btn-primary btn-sm" onClick={() => handleRespond(c.id, 'accept')}>Accept</button>
-                      <button className="btn btn-outline btn-sm" onClick={() => handleRespond(c.id, 'decline')}>Decline</button>
-                    </div>
-                  </div>
-                );
-              })}
-              {incoming.length === 0 && <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>No pending connection requests.</div>}
-            </div>
-          )}
-        </>
-      )}
-    </DashboardLayout>
-  );
-};
-
-// ─── Opportunities Page ───────────────────────────────────────────
-export const OpportunitiesPage = () => {
-  const [opps, setOpps] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState({ type: '', is_remote: '' });
-  const navigate = useNavigate();
-
-  const load = () => {
-    const params = {};
-    if (search) params.search = search;
-    if (filter.type) params.type = filter.type;
-    if (filter.is_remote) params.is_remote = filter.is_remote;
-    opportunitiesAPI.list(params).then(r => setOpps(r.data.results || r.data.data || [])).catch(() => {}).finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(); }, [search, filter]);
-
-  const handleApply = async (oppId) => {
-    try {
-      let portfolioLink = '';
-      try {
-        const shareRes = await artistAPI.getShareLink();
-        portfolioLink = shareRes.data.data?.url || '';
-      } catch {}
-      await applicationsAPI.apply({
-        opportunity: oppId,
-        cover_letter: '',
-        portfolio_link: portfolioLink,
-      });
-      toast.success('Application submitted!');
-    } catch (e) { toast.error(e.response?.data?.message || 'Could not apply'); }
-  };
-
-  return (
-    <DashboardLayout>
-      <div className="dash-page-header"><h1 className="dash-page-title">Opportunities</h1></div>
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <input className="form-input" placeholder="Search opportunities..." value={search} onChange={e => setSearch(e.target.value)} style={{ maxWidth: '320px' }} />
-        <select className="form-input form-select" value={filter.type} onChange={e => setFilter(f => ({ ...f, type: e.target.value }))} style={{ width: '160px' }}>
-          <option value="">All Types</option>
-          {['job','audition','collaboration','workshop','residency','festival','other'].map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase()+t.slice(1)}</option>)}
-        </select>
-        <select className="form-input form-select" value={filter.is_remote} onChange={e => setFilter(f => ({ ...f, is_remote: e.target.value }))} style={{ width: '140px' }}>
-          <option value="">Any Location</option>
-          <option value="true">Remote</option>
-          <option value="false">On-site</option>
-        </select>
-      </div>
-      {loading ? <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>Loading opportunities...</div> : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px,1fr))', gap: '16px' }}>
-          {opps.map(opp => (
-            <div key={opp.id} className="section-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '10px', background: 'var(--gold-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>🎭</div>
-                <div>
-                  <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--dark)' }}>{opp.title}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{opp.organization_name}</div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <span className="badge badge-gold">{opp.opportunity_type}</span>
-                {opp.is_remote && <span className="badge badge-info">Remote</span>}
-                <span className={`badge ${opp.payment_type==='paid'?'badge-success':'badge-grey'}`}>{opp.payment_type}</span>
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>📍 {opp.location || 'Location TBD'} · {opp.applications_count} applicants</div>
-              {opp.application_deadline && <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>⏰ Deadline: {opp.application_deadline}</div>}
-              <button className="btn btn-primary btn-sm" onClick={() => handleApply(opp.id)}>Apply Now</button>
-            </div>
-          ))}
-          {opps.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>No opportunities found. Try adjusting your filters.</div>}
-        </div>
-      )}
-    </DashboardLayout>
-  );
-};
-
-// ─── Applications Page ────────────────────────────────────────────
-export const ApplicationsPage = () => {
-  const [apps, setApps] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    applicationsAPI.myApplications().then(r => setApps(r.data.data || [])).catch(() => {}).finally(() => setLoading(false));
-  }, []);
-
-  const handleWithdraw = async (id) => {
-    if (!window.confirm('Withdraw this application?')) return;
-    try { await applicationsAPI.withdraw(id); setApps(a => a.filter(x => x.id !== id)); toast.success('Application withdrawn'); }
-    catch { toast.error('Failed to withdraw'); }
-  };
-
-  const statusColors = { pending: 'badge-gold', under_review: 'badge-info', shortlisted: 'badge-success', accepted: 'badge-success', rejected: 'badge-error', withdrawn: 'badge-grey' };
-
-  return (
-    <DashboardLayout>
-      <div className="dash-page-header"><h1 className="dash-page-title">My Applications</h1></div>
-      {loading ? <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>Loading...</div> : (
-        <div className="section-card">
-          {apps.length === 0 ? (
-            <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: '40px', marginBottom: '12px' }}>📋</div>
-              <div>No applications yet. Browse opportunities and apply!</div>
-            </div>
-          ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-                  {['Opportunity','Organization','Applied','Status','Action'].map(h => <th key={h} style={{ padding: '14px 16px', fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {apps.map(app => (
-                  <tr key={app.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '14px 16px', fontWeight: '500', color: 'var(--dark)' }}>{app.opportunity?.title}</td>
-                    <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{app.opportunity?.organization_name}</td>
-                    <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{new Date(app.created_at).toLocaleDateString()}</td>
-                    <td style={{ padding: '14px 16px' }}><span className={`badge ${statusColors[app.status] || 'badge-grey'}`}>{app.status_display}</span></td>
-                    <td style={{ padding: '14px 16px' }}>
-                      {['pending','under_review'].includes(app.status) && (
-                        <button className="btn btn-sm btn-outline" style={{ color: 'var(--error)', borderColor: 'var(--error)' }} onClick={() => handleWithdraw(app.id)}>Withdraw</button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
-    </DashboardLayout>
-  );
-};
 
 export default PortfolioPage;

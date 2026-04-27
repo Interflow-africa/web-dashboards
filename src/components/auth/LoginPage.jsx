@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import getApiError from '@/utils/apiError';
 import AuthSplitLayout from '@/components/layout/AuthSplitLayout';
 import FloatingInput from '@/components/common/FloatingInput';
 import useAuthStore from '@/store/authStore';
@@ -48,7 +49,7 @@ const LoginPage = () => {
         navigate(res.role === 'artist' ? '/dashboard' : '/org/dashboard');
       }
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Invalid credentials. Please try again.');
+      toast.error(getApiError(err, 'Invalid credentials. Please try again.'));
     }
   };
 

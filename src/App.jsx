@@ -26,7 +26,10 @@ const SharePortfolioPage   = lazy(() => import('@/pages/SharePortfolioPage'));
 const OrgOpportunitiesPage = lazy(() => import('@/pages/OrgOpportunitiesPage'));
 const OrgApplicationsPage  = lazy(() => import('@/pages/OrgApplicationsPage'));
 const PublicPortfolioPage  = lazy(() => import('@/pages/PublicPortfolioPage'));
-const OrgProfilePage       = lazy(() => import('@/pages/OrgProfilePage'));
+const OrgProfilePage              = lazy(() => import('@/pages/OrgProfilePage'));
+const ViewApplicationInfoPage     = lazy(() => import('@/pages/ViewApplicationInfoPage'));
+const CallForArtistsPage          = lazy(() => import('@/pages/CallForArtistsPage'));
+const ActivateAccountPage         = lazy(() => import('@/pages/ActivateAccountPage'));
 
 const PrivateRoute = ({ children }) => {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
@@ -60,6 +63,8 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/portfolio/public/:token" element={<PublicPortfolioPage />} />
+          <Route path="/apply/:slug" element={<CallForArtistsPage />} />
+          <Route path="/activate/:token" element={<ActivateAccountPage />} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -74,6 +79,7 @@ function App() {
           <Route path="/network" element={<PrivateRoute><NetworkPage /></PrivateRoute>} />
           <Route path="/opportunities" element={<PrivateRoute><OpportunitiesPage /></PrivateRoute>} />
           <Route path="/applications" element={<PrivateRoute><ApplicationsPage /></PrivateRoute>} />
+          <Route path="/applications/:id" element={<PrivateRoute><ViewApplicationInfoPage /></PrivateRoute>} />
           <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
           <Route path="/org/dashboard" element={<PrivateRoute><OrgDashboard /></PrivateRoute>} />
           <Route path="/org/profile" element={<PrivateRoute><OrgProfilePage /></PrivateRoute>} />

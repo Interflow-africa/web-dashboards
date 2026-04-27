@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { artistAPI, relevantWorksAPI } from '@/services/index';
+import getApiError from '@/utils/apiError';
 
 /* ─── Query Keys ────────────────────────────────────────────────── */
 export const ARTIST_KEYS = {
@@ -47,7 +48,7 @@ export const useArtistStep1 = () => {
   return useMutation({
     mutationFn: (data) => artistAPI.step1(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ARTIST_KEYS.profile }),
-    onError: (e) => toast.error(e?.response?.data?.message || 'Step 1 failed.'),
+    onError: (e) => toast.error(getApiError(e, 'Step 1 failed.')),
   });
 };
 
@@ -56,7 +57,7 @@ export const useArtistStep2 = () => {
   return useMutation({
     mutationFn: (data) => artistAPI.step2(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ARTIST_KEYS.profile }),
-    onError: (e) => toast.error(e?.response?.data?.message || 'Step 2 failed.'),
+    onError: (e) => toast.error(getApiError(e, 'Step 2 failed.')),
   });
 };
 
@@ -65,7 +66,7 @@ export const useArtistStep3 = () => {
   return useMutation({
     mutationFn: (data) => artistAPI.step3(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ARTIST_KEYS.profile }),
-    onError: (e) => toast.error(e?.response?.data?.message || 'Step 3 failed.'),
+    onError: (e) => toast.error(getApiError(e, 'Step 3 failed.')),
   });
 };
 
@@ -179,7 +180,7 @@ export const useCreateRelevantWork = () => {
       queryClient.invalidateQueries({ queryKey: RELEVANT_WORKS_KEYS.all });
       toast.success('Work added!');
     },
-    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to add work.'),
+    onError: (err) => toast.error(getApiError(err, 'Failed to add work.')),
   });
 };
 
@@ -191,7 +192,7 @@ export const useUpdateRelevantWork = () => {
       queryClient.invalidateQueries({ queryKey: RELEVANT_WORKS_KEYS.all });
       toast.success('Work updated!');
     },
-    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to update work.'),
+    onError: (err) => toast.error(getApiError(err, 'Failed to update work.')),
   });
 };
 
@@ -203,6 +204,6 @@ export const useDeleteRelevantWork = () => {
       queryClient.invalidateQueries({ queryKey: RELEVANT_WORKS_KEYS.all });
       toast.success('Work removed.');
     },
-    onError: (err) => toast.error(err?.response?.data?.message || 'Failed to delete work.'),
+    onError: (err) => toast.error(getApiError(err, 'Failed to delete work.')),
   });
 };

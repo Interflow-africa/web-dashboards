@@ -39,6 +39,7 @@ const ActiveOppsCard = ({ title }) => {
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm flex flex-col gap-3">
       <p className="text-[14px] font-bold text-[#1A1A1A]">{title}</p>
+      <div className="overflow-x-auto">
       <table className="w-full text-[12px]">
         <thead>
           <tr className="text-[#888] text-left">
@@ -57,6 +58,7 @@ const ActiveOppsCard = ({ title }) => {
           ))}
         </tbody>
       </table>
+      </div>
       <div className="flex justify-end">
         <button
           onClick={() => navigate('/org/opportunities')}
@@ -176,7 +178,7 @@ const OrgDashboard = () => {
         </div>
 
         {/* ── Section 2: Stat cards ── */}
-        <div className="flex flex-wrap gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 
           {/* Card 1 – Opportunities posted (blue) */}
           <div
@@ -258,7 +260,7 @@ const OrgDashboard = () => {
         </div>
 
         {/* ── Section 3: Gender chart + Active Opps ── */}
-        <div className="flex gap-5 mb-5" style={{ flexWrap: 'wrap' }}>
+        <div className="flex flex-col lg:flex-row gap-5 mb-5">
 
           {/* LEFT – Gender distribution */}
           <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col gap-4" style={{ flex: '1 1 340px' }}>
@@ -304,7 +306,7 @@ const OrgDashboard = () => {
         </div>
 
         {/* ── Section 4: Applications Overview + Active Opps ── */}
-        <div className="flex gap-5" style={{ flexWrap: 'wrap' }}>
+        <div className="flex flex-col lg:flex-row gap-5">
 
           {/* LEFT – Applications Overview */}
           <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col gap-4" style={{ flex: '1 1 420px' }}>
@@ -319,6 +321,7 @@ const OrgDashboard = () => {
               </button>
             </div>
 
+            <div className="overflow-x-auto">
             <table className="w-full text-[12px]">
               <thead>
                 <tr className="text-[#888] text-left border-b border-gray-100">
@@ -339,6 +342,7 @@ const OrgDashboard = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
 
           {/* RIGHT – Active Opps card */}

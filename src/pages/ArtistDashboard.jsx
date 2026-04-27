@@ -181,7 +181,7 @@ const ArtistDashboard = () => {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {STAT_CARDS.map(c => <StatCard key={c.title} {...c} />)}
 
         {/* Profile completion card */}
@@ -201,7 +201,7 @@ const ArtistDashboard = () => {
       </div>
 
       {/* Opportunities + right sidebar */}
-      <div className="flex gap-6">
+      <div className="flex flex-col xl:flex-row gap-6">
         {/* Left main */}
         <div className="flex-1 min-w-0 space-y-5">
           {/* Opportunities for you */}
@@ -257,8 +257,8 @@ const ArtistDashboard = () => {
           </div>
         </div>
 
-        {/* Right sidebar */}
-        <div className="w-[260px] shrink-0">
+        {/* Right sidebar — full width on mobile, fixed width on xl */}
+        <div className="w-full xl:w-[260px] xl:shrink-0">
           <div className="bg-white rounded-2xl border border-[#EBEBEB] p-5">
             <div className="flex items-center gap-2 mb-4">
               <Eye size={15} className="text-[#8B6914]" />
