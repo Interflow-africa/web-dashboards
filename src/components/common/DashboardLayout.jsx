@@ -4,7 +4,7 @@ import './Layout.css';
 import {
   LayoutDashboard, User, Users, Briefcase, FileText,
   Share2, HelpCircle, Settings, Bell, Mail, Search,
-  LogOut, Menu, X,
+  LogOut, Menu, X, ClipboardList,
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import { notificationsAPI } from '@/services/index';
@@ -23,6 +23,7 @@ const ORG_NAV = [
   { label: 'Profile',       icon: User,            to: '/org/profile' },
   { label: 'Opportunities', icon: Briefcase,       to: '/org/opportunities' },
   { label: 'Applications',  icon: FileText,        to: '/org/applications' },
+  { label: 'Forms',         icon: ClipboardList,   to: '/org/forms' },
   { label: 'Messages',      icon: Mail,            to: '/messages' },
 ];
 

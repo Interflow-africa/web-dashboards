@@ -262,6 +262,7 @@ const ViewOpportunityModal = ({ opp, onClose }) => {
 /* ─── APPLICATION RESPONSE MODAL ──────────────────────────────── */
 const ApplicationResponseModal = ({ app, opp: oppProp, onClose, onSuccess }) => {
   const [responseStatus, setResponseStatus] = useState('');
+  const [orgNotes, setOrgNotes]             = useState('');
   const [orgFeedback, setOrgFeedback]       = useState('');
   const [saving, setSaving]                 = useState(false);
 
@@ -278,6 +279,7 @@ const ApplicationResponseModal = ({ app, opp: oppProp, onClose, onSuccess }) => 
     try {
       await applicationsAPI.updateStatus(app?.id, {
         status: responseStatus,
+        org_notes: orgNotes,
         org_feedback: orgFeedback,
       });
       toast.success('Response submitted!');
@@ -349,7 +351,17 @@ const ApplicationResponseModal = ({ app, opp: oppProp, onClose, onSuccess }) => 
             </div>
           </div>
           <div>
-            <label className="text-[11px] text-gray-400 font-medium mb-1 block">Feedback (optional)</label>
+            <label className="text-[11px] text-gray-400 font-medium mb-1 block">Internal notes (optional)</label>
+            <textarea
+              rows={2}
+              value={orgNotes}
+              onChange={e => setOrgNotes(e.target.value)}
+              placeholder="Private notes visible only to your team…"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/20 resize-vertical"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] text-gray-400 font-medium mb-1 block">Feedback for applicant (optional)</label>
             <textarea
               rows={3}
               value={orgFeedback}

@@ -27,6 +27,7 @@ const OrgOpportunitiesPage = lazy(() => import('@/pages/OrgOpportunitiesPage'));
 const OrgApplicationsPage  = lazy(() => import('@/pages/OrgApplicationsPage'));
 const PublicPortfolioPage  = lazy(() => import('@/pages/PublicPortfolioPage'));
 const OrgProfilePage              = lazy(() => import('@/pages/OrgProfilePage'));
+const OrgFormsPage                = lazy(() => import('@/pages/OrgFormsPage'));
 const ViewApplicationInfoPage     = lazy(() => import('@/pages/ViewApplicationInfoPage'));
 const CallForArtistsPage          = lazy(() => import('@/pages/CallForArtistsPage'));
 const ActivateAccountPage         = lazy(() => import('@/pages/ActivateAccountPage'));
@@ -85,6 +86,7 @@ function App() {
           <Route path="/org/profile" element={<PrivateRoute><OrgProfilePage /></PrivateRoute>} />
           <Route path="/org/opportunities" element={<PrivateRoute><OrgOpportunitiesPage /></PrivateRoute>} />
           <Route path="/org/applications" element={<PrivateRoute><OrgApplicationsPage /></PrivateRoute>} />
+          <Route path="/org/forms" element={<PrivateRoute><OrgFormsPage /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
           <Route path="/support" element={<PrivateRoute><SupportPage /></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
