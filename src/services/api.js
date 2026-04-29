@@ -146,7 +146,7 @@ export const applicationsAPI = {
   orgAll: (params) => api.get('/applications/manage/', { params }),
   orgDetail: (pk) => api.get(`/applications/manage/${pk}/`),
   orgByOpportunity: (oppPk, params) => api.get(`/applications/manage/opportunity/${oppPk}/`, { params }),
-  updateStatus: (pk, data) => api.patch(`/applications/manage/${pk}/status/`, data),
+  updateStatus: (pk, data) => api.patch(`/applications/${pk}/status/`, data),
 };
 
 // ─── Notifications ────────────────────────────────────────────────
@@ -174,11 +174,43 @@ export const settingsAPI = {
   deactivateAccount: () => api.post('/settings/account/deactivate/'),
 };
 
+// ─── Dashboard ────────────────────────────────────────────────────
+export const dashboardAPI = {
+  // Organization
+  orgWelcome:                () => api.get('/dashboard/organization/welcome/'),
+  orgOpportunitiesPosted:    () => api.get('/dashboard/organization/opportunities-posted/'),
+  orgActiveOpportunitiesCount: () => api.get('/dashboard/organization/active-opportunities-count/'),
+  orgApplicationsCount:      () => api.get('/dashboard/organization/applications-count/'),
+  orgProfileProgress:        () => api.get('/dashboard/organization/profile-progress/'),
+  orgGenderDistribution:     (params) => api.get('/dashboard/organization/gender-distribution/', { params }),
+  orgActiveOpportunities:    (params) => api.get('/dashboard/organization/active-opportunities/', { params }),
+  orgApplicationsOverview:   (params) => api.get('/dashboard/organization/applications-overview/', { params }),
+  // Artist
+  artistWelcome:             () => api.get('/dashboard/artist/welcome/'),
+  artistConnectionsCount:    () => api.get('/dashboard/artist/connections-count/'),
+  artistPortfolioViewers:    (params) => api.get('/dashboard/artist/portfolio-viewers/', { params }),
+  artistApplicationsCount:   () => api.get('/dashboard/artist/applications-count/'),
+  artistProfileProgress:     () => api.get('/dashboard/artist/profile-progress/'),
+  artistOpportunitiesForYou: () => api.get('/dashboard/artist/opportunities-for-you/'),
+  artistConnectionsClose:    () => api.get('/dashboard/artist/connections-close/'),
+  artistRecentActivity:      () => api.get('/dashboard/artist/recent-activity/'),
+  artistUpdates:             () => api.get('/dashboard/artist/updates/'),
+};
+
 // ─── Support ──────────────────────────────────────────────────────
 export const supportAPI = {
   list: () => api.get('/support/'),
   create: (data) => api.post('/support/', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   detail: (pk) => api.get(`/support/${pk}/`),
+};
+
+// ─── Org Forms ────────────────────────────────────────────────────
+export const orgFormsAPI = {
+  list:             ()        => api.get('/interflow_form/manage/forms/'),
+  detail:           (formId)  => api.get(`/interflow_form/manage/forms/${formId}/`),
+  submissions:      (formId)  => api.get(`/interflow_form/manage/forms/${formId}/submissions/`),
+  submissionDetail: (subId)   => api.get(`/interflow_form/manage/submissions/${subId}/`),
+  updateSubmission: (subId, data) => api.patch(`/interflow_form/manage/submissions/${subId}/`, data),
 };
 
 // ─── Call For Artists (always public — no auth header needed) ──────
