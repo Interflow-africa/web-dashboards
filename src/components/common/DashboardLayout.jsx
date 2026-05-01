@@ -65,12 +65,14 @@ const DashboardLayout = ({ children }) => {
   const links  = isOrg ? ORG_NAV : ARTIST_NAV;
 
   const initials = user
-    ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase() || 'U'
+    ? `${user.profile.first_name?.[0] ?? ''}${user.profile.last_name?.[0] ?? ''}`.toUpperCase() || user.profile.organization_name?.[0] || 'U'
     : 'U';
 
   const displayName = user
-    ? `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim() || user.email?.split('@')[0]
-    : '';
+    ? `${user.profile.first_name ?? ""} ${user.profile.last_name ?? ""}`.trim() ||
+      user.profile.organization_name ||
+      user.email?.split("@")[0]
+    : "";
 
   useEffect(() => {
     notificationsAPI.unreadCount()
