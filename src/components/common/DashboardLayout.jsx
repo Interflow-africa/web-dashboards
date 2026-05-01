@@ -12,7 +12,7 @@ import { notificationsAPI } from '@/services/index';
 const ARTIST_NAV = [
   { label: 'Dashboard',       icon: LayoutDashboard, to: '/dashboard' },
   { label: 'My Portfolio',    icon: User,            to: '/portfolio' },
-  { label: 'My Network',      icon: Users,           to: '/network' },
+  // { label: 'My Network',      icon: Users,           to: '/network' },
   { label: 'Opportunities',   icon: Briefcase,       to: '/opportunities' },
   { label: 'Applications',    icon: FileText,        to: '/applications' },
   { label: 'Share Portfolio', icon: Share2,          to: '/portfolio/share' },
@@ -24,7 +24,7 @@ const ORG_NAV = [
   { label: 'Opportunities', icon: Briefcase,       to: '/org/opportunities' },
   { label: 'Applications',  icon: FileText,        to: '/org/applications' },
   { label: 'Forms',         icon: ClipboardList,   to: '/org/forms' },
-  { label: 'Messages',      icon: Mail,            to: '/messages' },
+  // { label: 'Messages',      icon: Mail,            to: '/messages' },
 ];
 
 const BOTTOM_NAV = [

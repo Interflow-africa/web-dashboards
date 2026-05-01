@@ -3,6 +3,15 @@ import DashboardLayout from '../components/common/DashboardLayout';
 import { artistAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
+// Extract the token from the API URL and return a frontend-hosted portfolio URL.
+// e.g. https://api.../artist/portfolio/public/{token}/ → http://localhost:5173/portfolio/public/{token}/
+const toFrontendUrl = (apiUrl) => {
+  if (!apiUrl) return '';
+  const match = apiUrl.match(/\/public\/([^/?#]+)\/?/);
+  const token = match?.[1];
+  return token ? `${window.location.origin}/portfolio/public/${token}/` : apiUrl;
+};
+
 const SharePortfolioPage = () => {
   const [shareData, setShareData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,9 +24,11 @@ const SharePortfolioPage = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  const shareUrl = toFrontendUrl(shareData?.share_url);
+
   const handleCopy = () => {
-    if (!shareData?.share_url) return;
-    navigator.clipboard.writeText(shareData.share_url).then(() => {
+    if (!shareUrl) return;
+    navigator.clipboard.writeText(shareUrl).then(() => {
       setCopied(true);
       toast.success('Portfolio link copied!');
       setTimeout(() => setCopied(false), 3000);
@@ -25,9 +36,9 @@ const SharePortfolioPage = () => {
   };
 
   const shareOptions = [
-    { label: 'Share on WhatsApp', icon: '💬', color: '#25D366', href: shareData ? `https://wa.me/?text=Check out my portfolio on Interflow: ${shareData.share_url}` : '#' },
-    { label: 'Share on Twitter / X', icon: '𝕏', color: '#000', href: shareData ? `https://twitter.com/intent/tweet?text=Check out my portfolio on Interflow!&url=${shareData.share_url}` : '#' },
-    { label: 'Share on LinkedIn', icon: 'in', color: '#0A66C2', href: shareData ? `https://www.linkedin.com/sharing/share-offsite/?url=${shareData.share_url}` : '#' },
+    { label: 'Share on WhatsApp',    icon: '💬', color: '#25D366', href: shareUrl ? `https://wa.me/?text=Check out my portfolio on Interflow: ${shareUrl}` : '#' },
+    { label: 'Share on Twitter / X', icon: '𝕏',  color: '#000',    href: shareUrl ? `https://twitter.com/intent/tweet?text=Check out my portfolio on Interflow!&url=${shareUrl}` : '#' },
+    { label: 'Share on LinkedIn',    icon: 'in', color: '#0A66C2', href: shareUrl ? `https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}` : '#' },
   ];
 
   return (
@@ -50,10 +61,10 @@ const SharePortfolioPage = () => {
 
           {loading ? (
             <div className="skeleton" style={{ height: '52px', borderRadius: 'var(--radius-full)', maxWidth: '400px', margin: '0 auto' }} />
-          ) : shareData ? (
+          ) : shareUrl ? (
             <div style={{ display: 'flex', gap: '0', maxWidth: '480px', margin: '0 auto 24px', border: '2px solid var(--gold)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
               <div style={{ flex: 1, padding: '13px 20px', fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'var(--gold-pale)' }}>
-                {shareData.share_url}
+                {shareUrl}
               </div>
               <button
                 onClick={handleCopy}
@@ -69,8 +80,8 @@ const SharePortfolioPage = () => {
           )}
 
           {/* Preview link */}
-          {shareData && (
-            <a href={shareData.share_url} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
+          {shareUrl && (
+            <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
               👁 Preview My Portfolio
             </a>
           )}
