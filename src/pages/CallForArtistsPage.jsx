@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, Upload, Link2, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getCountries, getCountryCallingCode } from 'react-phone-number-input/max';
+import en from 'react-phone-number-input/locale/en.json';
 import { callForArtistsAPI } from '@/services/index';
 import getApiError from '@/utils/apiError';
 
@@ -16,6 +18,7 @@ const DISCIPLINE_OPTIONS = [
   { value: 'singer_vocalist',    label: 'Singer / Vocalist' },
   { value: 'theatre_performer',  label: 'Theatre Performer' },
   { value: 'performance_artist', label: 'Performance Artist' },
+  { value: 'others',             label: 'Others' },
 ];
 
 const SUB_FIELDS = {
@@ -24,6 +27,11 @@ const SUB_FIELDS = {
   musician:          { key: 'instrument',    label: 'Instrument',    options: ['Guitar', 'Piano / Keyboard', 'Drums / Percussion', 'Bass', 'Violin', 'Saxophone', 'Trumpet', 'Traditional Instrument'] },
   singer_vocalist:   { key: 'vocal_type',    label: 'Vocal Type',    options: ['Lead Vocalist', 'Backup Vocalist', 'Choir Singer'] },
 };
+
+/* ─── Country list (built from react-phone-number-input/core) ───── */
+const ALL_COUNTRIES = getCountries()
+  .map(code => ({ code, name: en[code] || code, dial: `+${getCountryCallingCode(code)}` }))
+  .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
 /* ─── Sub-components ───────────────────────────────────────────── */
 
@@ -172,15 +180,19 @@ const CallForArtistsPage = () => {
   const [workFile, setWorkFile] = useState(null);
   const workFileRef = useRef();
 
+  /* Phone split state */
+  const [dialCode, setDialCode] = useState('+234');
+  const [phoneNum, setPhoneNum] = useState('');
+
   /* Form state */
   const [form, setForm] = useState({
     full_name:             '',
     email:                 '',
-    phone_number:          '',
     city:                  '',
     country:               '',
     instagram_handle:      '',
     primary_discipline:    '',
+    custom_discipline:     '',
     dance_style:           '',
     poetry_style:          '',
     instrument:            '',
@@ -237,6 +249,8 @@ const CallForArtistsPage = () => {
     if (!form.city.trim())               e.city                = 'City is required';
     if (!form.country.trim())            e.country             = 'Country is required';
     if (!form.primary_discipline)        e.primary_discipline  = 'Please select your discipline';
+    if (form.primary_discipline === 'others' && !form.custom_discipline.trim())
+                                         e.custom_discipline   = 'Please specify your discipline';
     if (!form.work_title.trim())         e.work_title          = 'Work title is required';
     if (workMode === 'url' && !form.work_external_url.trim())
                                          e.work_external_url   = 'Please provide a link to your work';
@@ -264,12 +278,19 @@ const CallForArtistsPage = () => {
       if (headshot) fd.append('headshot', headshot);
       fd.append('full_name',  form.full_name.trim());
       fd.append('email',      form.email.trim());
-      if (form.phone_number)    fd.append('phone_number',    form.phone_number.trim());
+
+      const fullPhone = phoneNum.trim() ? `${dialCode}${phoneNum.trim()}` : '';
+      if (fullPhone) fd.append('phone_number', fullPhone);
+
       fd.append('city',         form.city.trim());
       fd.append('country',      form.country.trim());
       if (form.instagram_handle) fd.append('instagram_handle', form.instagram_handle.trim());
 
-      fd.append('primary_discipline', form.primary_discipline);
+      if (form.primary_discipline === 'others') {
+        fd.append('primary_discipline', form.custom_discipline.trim());
+      } else {
+        fd.append('primary_discipline', form.primary_discipline);
+      }
       const sub = SUB_FIELDS[form.primary_discipline];
       if (sub && form[sub.key]) fd.append(sub.key, form[sub.key]);
       if (form.role)            fd.append('role', form.role.trim());
@@ -408,7 +429,25 @@ const CallForArtistsPage = () => {
                 <Input type="email" placeholder="dayo@example.com" value={form.email} onChange={set('email')} error={errors.email} />
               </Field>
               <Field label="Phone Number" error={errors.phone_number}>
-                <Input type="tel" placeholder="+2348012345678" value={form.phone_number} onChange={set('phone_number')} />
+                <div className="flex gap-2">
+                  <select
+                    value={dialCode}
+                    onChange={e => setDialCode(e.target.value)}
+                    className="border border-gray-200 rounded-xl px-2 py-3 text-[13px] text-gray-800 outline-none focus:border-[#8D5D1D] bg-white"
+                    style={{ width: 120, flexShrink: 0 }}
+                  >
+                    {ALL_COUNTRIES.map(c => (
+                      <option key={c.code} value={c.dial}>{c.dial} {c.name}</option>
+                    ))}
+                  </select>
+                  <Input
+                    type="tel"
+                    placeholder="8012345678"
+                    value={phoneNum}
+                    onChange={e => { setPhoneNum(e.target.value); setErrors(err => { const n={...err}; delete n.phone_number; return n; }); }}
+                    className="flex-1"
+                  />
+                </div>
               </Field>
               <Field label="Instagram Handle" error={errors.instagram_handle}>
                 <Input placeholder="@yourhandle" value={form.instagram_handle} onChange={set('instagram_handle')} />
@@ -417,7 +456,12 @@ const CallForArtistsPage = () => {
                 <Input placeholder="e.g. Lagos" value={form.city} onChange={set('city')} error={errors.city} />
               </Field>
               <Field label="Country" required error={errors.country}>
-                <Input placeholder="e.g. Nigeria" value={form.country} onChange={set('country')} error={errors.country} />
+                <Select value={form.country} onChange={set('country')} error={errors.country}>
+                  <option value="">Select country…</option>
+                  {ALL_COUNTRIES.map(c => (
+                    <option key={c.code} value={c.name}>{c.name}</option>
+                  ))}
+                </Select>
               </Field>
             </div>
           </SectionCard>
@@ -432,12 +476,23 @@ const CallForArtistsPage = () => {
                     options={DISCIPLINE_OPTIONS}
                     value={form.primary_discipline}
                     onChange={(v) => {
-                      setForm(f => ({ ...f, primary_discipline: v, dance_style: '', poetry_style: '', instrument: '', vocal_type: '' }));
-                      setErrors(e => { const n = { ...e }; delete n.primary_discipline; return n; });
+                      setForm(f => ({ ...f, primary_discipline: v, custom_discipline: '', dance_style: '', poetry_style: '', instrument: '', vocal_type: '' }));
+                      setErrors(e => { const n = { ...e }; delete n.primary_discipline; delete n.custom_discipline; return n; });
                     }}
                   />
                 </div>
               </Field>
+
+              {form.primary_discipline === 'others' && (
+                <Field label="Your Discipline" required error={errors.custom_discipline}>
+                  <Input
+                    placeholder="e.g. Circus Arts, Puppetry…"
+                    value={form.custom_discipline}
+                    onChange={set('custom_discipline')}
+                    error={errors.custom_discipline}
+                  />
+                </Field>
+              )}
 
               {subField && (
                 <Field label={subField.label} error={errors[subField.key]}>
@@ -582,11 +637,30 @@ const CallForArtistsPage = () => {
           </SectionCard>
 
           {/* ── Submit ── */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="flex flex-col gap-4">
+            {/* Consent notice */}
+            <div className="flex items-start gap-3 p-4 rounded-2xl border border-[#D4A84B]/30 bg-[#FFF8EC]">
+              <div className="w-5 h-5 rounded-full bg-[#D4A84B] flex items-center justify-center shrink-0 mt-0.5">
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                  <polyline points="1,4 4,7 9,1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div className="text-[13px] text-[#5C3D0E] leading-relaxed space-y-2">
+                <p className="font-semibold">By submitting this application you confirm and consent to the following:</p>
+                <ul className="list-disc list-inside space-y-1 text-[12.5px]">
+                  <li>All information provided in this form is accurate and truthful.</li>
+                  <li>Interflow will use your submitted details — including your name, contact information, discipline, and portfolio work — to <strong>create an artist profile on your behalf</strong> on the Interflow platform.</li>
+                  <li>You will receive an activation email to set your password and gain full access to your new Interflow account.</li>
+                  <li>Your profile may be visible to participating organisations on the platform in line with the opportunity you are applying for.</li>
+                  <li>You agree to Interflow's terms and conditions and privacy policy.</li>
+                </ul>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-2.5 font-semibold text-[15px] text-white px-8 py-3.5 rounded-full transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="self-start flex items-center gap-2.5 font-semibold text-[15px] text-white px-8 py-3.5 rounded-full transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: submitting ? '#7A5019' : GOLD }}
               onMouseEnter={e => { if (!submitting) e.currentTarget.style.background = GOLD_DARK; }}
               onMouseLeave={e => { if (!submitting) e.currentTarget.style.background = GOLD; }}>
@@ -597,9 +671,6 @@ const CallForArtistsPage = () => {
                 </span>
               )}
             </button>
-            <p className="text-[12px] text-gray-400 leading-relaxed">
-              By submitting you agree to Interflow's terms. We'll email you next steps.
-            </p>
           </div>
         </div>
       </form>

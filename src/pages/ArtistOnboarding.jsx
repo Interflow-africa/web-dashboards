@@ -711,7 +711,10 @@ const Step4 = ({ onNext, onSkip }) => {
       if (media) {
         const fd = new FormData();
         fd.append('file', media);
-        fd.append('media_type', media.type.startsWith('video') ? 'video' : 'image');
+        fd.append(
+          "media_type",
+          media.type.startsWith("video") ? "video" : "photo",
+        );
         await artistAPI.uploadMedia(fd);
       }
       onNext();

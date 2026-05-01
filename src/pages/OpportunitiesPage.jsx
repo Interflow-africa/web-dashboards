@@ -256,12 +256,16 @@ const ApplyModal = ({ opp, onClose, onSuccess }) => {
       .finally(() => setLoadingSchema(false));
   }, [opp.id]);
 
-  /* Fetch the artist's Interflow portfolio share link */
+  /* Fetch the artist's Interflow portfolio share link and convert to frontend URL */
   useEffect(() => {
     artistAPI.getShareLink()
       .then(r => {
         const d = r.data?.data || r.data || {};
-        setPortfolioUrl(d.share_url || d.url || d.portfolio_url || d.link || '');
+        const apiUrl = d.share_url || d.url || d.portfolio_url || d.link || '';
+        const match = apiUrl.match(/\/public\/([^/?#]+)\/?/);
+        const token = match?.[1];
+        const frontendUrl = token ? `${window.location.origin}/portfolio/public/${token}/` : apiUrl;
+        setPortfolioUrl(frontendUrl);
       })
       .catch(() => {});
   }, []);
