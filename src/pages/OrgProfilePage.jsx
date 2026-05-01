@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, X, Plus, Edit2, MoreHorizontal } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import useAuthStore from '@/store/authStore';
+import { authAPI, orgAPI } from '@/services/api';
+import toast from 'react-hot-toast';
 
-// ── Mock data ──────────────────────────────────────────────────────────────
+// ── Mock data (kept as fallbacks / used in Add modals) ────────────────────────
 
 const RELEVANT_WORKS = [
   { id: 1, title: 'Lagos Sound Festival 2024',   subtitle: 'Lagos, Nigeria. Invited Artist' },
@@ -67,37 +69,60 @@ const OutlinedEditBtn = ({ onClick, label = 'Edit Info' }) => (
 );
 
 // ── Video thumbnail placeholder ────────────────────────────────────────────
-const VideoThumb = ({ caption }) => (
-  <div className="flex flex-col gap-1.5 shrink-0" style={{ width: 160 }}>
-    <div
-      className="rounded-xl flex items-center justify-center"
-      style={{ width: 160, height: 100, background: '#1A1A1A', position: 'relative' }}
-    >
+const VideoThumb = ({ caption, url, thumbnail }) => {
+  const inner = (
+    <div className="flex flex-col gap-1.5 shrink-0" style={{ width: 160 }}>
       <div
-        className="rounded-full flex items-center justify-center"
-        style={{ width: 32, height: 32, background: 'rgba(255,0,0,0.85)' }}
+        className="rounded-xl flex items-center justify-center overflow-hidden"
+        style={{
+          width: 160,
+          height: 100,
+          background: thumbnail ? `url(${thumbnail}) center/cover no-repeat` : '#1A1A1A',
+          position: 'relative',
+        }}
       >
-        <svg width="12" height="14" viewBox="0 0 12 14" fill="white">
-          <polygon points="0,0 12,7 0,14" />
-        </svg>
+        <div
+          className="rounded-full flex items-center justify-center"
+          style={{ width: 32, height: 32, background: 'rgba(255,0,0,0.85)' }}
+        >
+          <svg width="12" height="14" viewBox="0 0 12 14" fill="white">
+            <polygon points="0,0 12,7 0,14" />
+          </svg>
+        </div>
       </div>
+      <p className="text-[11px] font-medium" style={{ color: '#8D5D1D', maxWidth: 160 }}>{caption}</p>
     </div>
-    <p className="text-[11px] font-medium" style={{ color: '#8D5D1D', maxWidth: 160 }}>{caption}</p>
-  </div>
-);
+  );
+
+  if (url) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" className="cursor-pointer">
+        {inner}
+      </a>
+    );
+  }
+  return inner;
+};
 
 // ── Image placeholder tile ─────────────────────────────────────────────────
-const ImageThumb = ({ label }) => (
+const ImageThumb = ({ label, src }) => (
   <div className="flex flex-col gap-1.5 shrink-0" style={{ width: 140 }}>
     <div
-      className="rounded-xl flex flex-col items-center justify-center gap-2"
-      style={{ width: 140, height: 100, background: '#FFF3E0', border: '1px solid #E8D5B0' }}
+      className="rounded-xl flex flex-col items-center justify-center gap-2 overflow-hidden"
+      style={{
+        width: 140,
+        height: 100,
+        background: src ? `url(${src}) center/cover no-repeat` : '#FFF3E0',
+        border: src ? 'none' : '1px solid #E8D5B0',
+      }}
     >
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8D5D1D" strokeWidth="1.5">
-        <rect x="3" y="3" width="18" height="18" rx="2" />
-        <circle cx="8.5" cy="8.5" r="1.5" />
-        <polyline points="21,15 16,10 5,21" />
-      </svg>
+      {!src && (
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8D5D1D" strokeWidth="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21,15 16,10 5,21" />
+        </svg>
+      )}
     </div>
     <p className="text-[11px] font-medium text-[#444]">{label}</p>
   </div>
@@ -359,117 +384,148 @@ const AddImageModal = ({ onClose }) => {
 };
 
 // ── TAB: Overview ──────────────────────────────────────────────────────────
-const OverviewTab = ({ openModal }) => (
-  <div className="flex flex-col lg:flex-row gap-6">
+const OverviewTab = ({ openModal, profile, media, onLogoUpload }) => {
+  const orgName = profile?.organization_name || '—';
+  const initials = orgName !== '—'
+    ? orgName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : 'OR';
 
-    {/* LEFT column */}
-    <div className="flex flex-col gap-5 w-full lg:w-[360px] lg:shrink-0">
-      {/* Avatar & name */}
-      <div className="flex flex-col items-center gap-2 bg-white rounded-2xl p-6 shadow-sm">
-        <div
-          className="flex items-center justify-center rounded-full"
-          style={{ width: 80, height: 80, border: '2px solid #8D5D1D', background: '#FFF3E0' }}
-        >
-          <span style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 700, fontSize: 22, color: '#1A1A1A' }}>WD</span>
-        </div>
-        <p className="text-[16px] font-bold text-[#1A1A1A] mt-1">Wild Dreams</p>
-        <p className="text-[12px] text-[#888]">Media and Entertainment Agency</p>
-      </div>
+  const relevantWorks = profile?.relevant_works || [];
 
-      {/* About */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm">
-        <SectionUnderlineHeading>About</SectionUnderlineHeading>
-        <p className="text-[13px] text-[#555] leading-relaxed">
-          Wild Dreams is a Lagos-based media and entertainment agency dedicated to amplifying African creative voices.
-          We produce, curate, and distribute music, film, and visual art across the continent and beyond.
-        </p>
-        <OutlinedEditBtn onClick={() => openModal('editAbout')} />
-      </div>
+  return (
+    <div className="flex flex-col lg:flex-row gap-6">
 
-      {/* Company Address */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm">
-        <SectionUnderlineHeading>Company Address</SectionUnderlineHeading>
-        <div className="flex flex-col gap-1.5 text-[13px]">
-          <p><GoldLabel>Address: </GoldLabel><span className="text-[#444]">14 Babs Animashaun Road, Surulere</span></p>
-          <p><GoldLabel>City: </GoldLabel><span className="text-[#444]">Lagos</span></p>
-          <p><GoldLabel>Country: </GoldLabel><span className="text-[#444]">Nigeria</span></p>
-        </div>
-        <OutlinedEditBtn onClick={() => openModal('editAddress')} />
-      </div>
-
-      {/* Contact Information */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm">
-        <SectionUnderlineHeading>Contact Information</SectionUnderlineHeading>
-        <div className="flex flex-col gap-1.5 text-[13px]">
-          <p><GoldLabel>Phone number: </GoldLabel><span className="text-[#444]">+234 803 000 1111</span></p>
-          <p><GoldLabel>Email address: </GoldLabel><span className="text-[#444]">hello@wilddreams.ng</span></p>
-        </div>
-        <OutlinedEditBtn onClick={() => openModal('editContact')} />
-      </div>
-    </div>
-
-    {/* RIGHT column */}
-    <div className="flex flex-col gap-5 flex-1" style={{ minWidth: 280 }}>
-      {/* Relevant Works */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[14px] font-bold text-[#1A1A1A]">Relevant works</p>
-          <button
-            onClick={() => openModal('addRelevantWork')}
-            className="flex items-center gap-1 text-[12px] font-medium border rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-all"
-            style={{ borderColor: '#D0D0D0', color: '#1A1A1A' }}
-          >
-            <Plus size={12} /> Add relevant works
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          {RELEVANT_WORKS.map(w => (
-            <div key={w.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-              <div>
-                <p className="text-[13px] font-semibold text-[#1A1A1A]">{w.title}</p>
-                <p className="text-[11px] text-[#888]">{w.subtitle}</p>
-              </div>
-              <button className="text-[#AAAAAA] hover:text-[#8D5D1D] transition-colors">
-                <Edit2 size={14} />
-              </button>
+      {/* LEFT column */}
+      <div className="flex flex-col gap-5 w-full lg:w-[360px] lg:shrink-0">
+        {/* Avatar & name */}
+        <div className="flex flex-col items-center gap-2 bg-white rounded-2xl p-6 shadow-sm">
+          <label className="relative cursor-pointer group" style={{ width: 80, height: 80 }}>
+            <input type="file" accept="image/*" className="hidden" onChange={onLogoUpload} />
+            <div
+              className="flex items-center justify-center rounded-full overflow-hidden w-full h-full"
+              style={{ border: '2px solid #8D5D1D', background: '#FFF3E0' }}
+            >
+              {profile?.logo ? (
+                <img src={profile.logo} alt={orgName} className="w-full h-full object-cover" />
+              ) : (
+                <span style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 700, fontSize: 22, color: '#1A1A1A' }}>{initials}</span>
+              )}
             </div>
-          ))}
+            <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'rgba(0,0,0,0.45)' }}>
+              <Edit2 size={16} color="white" />
+            </div>
+          </label>
+          <p className="text-[16px] font-bold text-[#1A1A1A] mt-1">{orgName}</p>
+          <p className="text-[12px] text-[#888]">{profile?.organization_type || profile?.industry || ''}</p>
         </div>
 
-        <button className="mt-3 text-[12px] font-semibold" style={{ color: '#8D5D1D' }}>See all</button>
+        {/* About */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <SectionUnderlineHeading>About</SectionUnderlineHeading>
+          <p className="text-[13px] text-[#555] leading-relaxed">
+            {profile?.bio || profile?.description || 'No description yet.'}
+          </p>
+          <OutlinedEditBtn onClick={() => openModal('editAbout')} />
+        </div>
+
+        {/* Company Address */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <SectionUnderlineHeading>Company Address</SectionUnderlineHeading>
+          <div className="flex flex-col gap-1.5 text-[13px]">
+            <p><GoldLabel>Address: </GoldLabel><span className="text-[#444]">{profile?.address || '—'}</span></p>
+            <p><GoldLabel>City: </GoldLabel><span className="text-[#444]">{profile?.city || '—'}</span></p>
+            <p><GoldLabel>Country: </GoldLabel><span className="text-[#444]">{profile?.country || '—'}</span></p>
+          </div>
+          <OutlinedEditBtn onClick={() => openModal('editAddress')} />
+        </div>
+
+        {/* Contact Information */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <SectionUnderlineHeading>Contact Information</SectionUnderlineHeading>
+          <div className="flex flex-col gap-1.5 text-[13px]">
+            <p><GoldLabel>Phone number: </GoldLabel><span className="text-[#444]">{profile?.phone || profile?.phone_number || '—'}</span></p>
+            <p><GoldLabel>Email address: </GoldLabel><span className="text-[#444]">{profile?.email || '—'}</span></p>
+          </div>
+          <OutlinedEditBtn onClick={() => openModal('editContact')} />
+        </div>
       </div>
 
-      {/* Work Samples */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm">
-        <p className="text-[14px] font-bold text-[#1A1A1A] mb-4">Work Samples</p>
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-          {VIDEO_SAMPLES.slice(0, 6).map(v => (
-            <div key={v.id} className="flex flex-col gap-1">
-              <div
-                className="rounded-xl flex items-center justify-center"
-                style={{ height: 100, background: '#1A1A1A', position: 'relative' }}
-              >
-                <div
-                  className="rounded-full flex items-center justify-center"
-                  style={{ width: 28, height: 28, background: 'rgba(255,0,0,0.85)' }}
-                >
-                  <svg width="10" height="12" viewBox="0 0 10 12" fill="white">
-                    <polygon points="0,0 10,6 0,12" />
-                  </svg>
+      {/* RIGHT column */}
+      <div className="flex flex-col gap-5 flex-1" style={{ minWidth: 280 }}>
+        {/* Relevant Works */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[14px] font-bold text-[#1A1A1A]">Relevant works</p>
+            <button
+              onClick={() => openModal('addRelevantWork')}
+              className="flex items-center gap-1 text-[12px] font-medium border rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-all"
+              style={{ borderColor: '#D0D0D0', color: '#1A1A1A' }}
+            >
+              <Plus size={12} /> Add relevant works
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {relevantWorks.length > 0 ? relevantWorks.map(w => (
+              <div key={w.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                <div>
+                  <p className="text-[13px] font-semibold text-[#1A1A1A]">{w.title}</p>
+                  <p className="text-[11px] text-[#888]">{w.subtitle}</p>
                 </div>
+                <button className="text-[#AAAAAA] hover:text-[#8D5D1D] transition-colors">
+                  <Edit2 size={14} />
+                </button>
               </div>
-              <p className="text-[10px] font-medium" style={{ color: '#8D5D1D' }}>{v.caption}</p>
-            </div>
-          ))}
+            )) : (
+              <p className="text-[13px] text-[#AAAAAA] py-2">No relevant works added yet.</p>
+            )}
+          </div>
+
+          <button className="mt-3 text-[12px] font-semibold" style={{ color: '#8D5D1D' }}>See all</button>
+        </div>
+
+        {/* Work Samples */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <p className="text-[14px] font-bold text-[#1A1A1A] mb-4">Work Samples</p>
+          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            {media.videos.slice(0, 6).map((v, idx) => (
+              <div key={v.id || idx} className="flex flex-col gap-1">
+                <div
+                  className="rounded-xl flex items-center justify-center overflow-hidden"
+                  style={{
+                    height: 100,
+                    background: v.thumbnail || v.cover_image
+                      ? `url(${v.thumbnail || v.cover_image}) center/cover no-repeat`
+                      : '#1A1A1A',
+                    position: 'relative',
+                  }}
+                >
+                  <div
+                    className="rounded-full flex items-center justify-center"
+                    style={{ width: 28, height: 28, background: 'rgba(255,0,0,0.85)' }}
+                  >
+                    <svg width="10" height="12" viewBox="0 0 10 12" fill="white">
+                      <polygon points="0,0 10,6 0,12" />
+                    </svg>
+                  </div>
+                </div>
+                <p className="text-[10px] font-medium" style={{ color: '#8D5D1D' }}>
+                  {v.caption || v.title || v.name || '—'}
+                </p>
+              </div>
+            ))}
+            {media.videos.length === 0 && (
+              <p className="text-[13px] text-[#AAAAAA] col-span-3 py-2">No work samples yet.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ── TAB: Media ─────────────────────────────────────────────────────────────
-const MediaTab = ({ openModal }) => (
+const MediaTab = ({ openModal, media }) => (
   <div className="flex flex-col gap-6">
     <div className="bg-white rounded-2xl p-5 shadow-sm">
       <p className="text-[16px] font-bold text-[#1A1A1A] mb-5">Our Gallery</p>
@@ -486,9 +542,20 @@ const MediaTab = ({ openModal }) => (
             <Plus size={12} /> Add Video
           </button>
         </div>
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {VIDEO_SAMPLES.map(v => <VideoThumb key={v.id} caption={v.caption} />)}
-        </div>
+        {media.videos.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            {media.videos.map((v, idx) => (
+              <VideoThumb
+                key={v.id || idx}
+                caption={v.caption || v.title || '—'}
+                url={v.url || v.file_url}
+                thumbnail={v.thumbnail || v.cover_image}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="text-[13px] text-[#AAAAAA] py-2">No videos yet.</p>
+        )}
       </div>
 
       {/* Images row */}
@@ -503,16 +570,26 @@ const MediaTab = ({ openModal }) => (
             <Plus size={12} /> Add image
           </button>
         </div>
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {IMAGE_SAMPLES.map(i => <ImageThumb key={i.id} label={i.label} />)}
-        </div>
+        {media.images.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            {media.images.map((img, idx) => (
+              <ImageThumb
+                key={img.id || idx}
+                label={img.title || img.caption || img.name || `Img_${img.id || idx}`}
+                src={img.url || img.file_url || img.image}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="text-[13px] text-[#AAAAAA] py-2">No images yet.</p>
+        )}
       </div>
     </div>
   </div>
 );
 
 // ── TAB: Admin ─────────────────────────────────────────────────────────────
-const AdminTab = () => {
+const AdminTab = ({ team }) => {
   const [adminView, setAdminView] = useState('list'); // 'list' | 'view' | 'add' | 'roles'
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
@@ -533,6 +610,25 @@ const AdminTab = () => {
     title: '', firstName: '', lastName: '', gender: '', dob: '', designation: '', phone: '', email: '',
   });
   const setField = k => e => setAddForm(p => ({ ...p, [k]: e.target.value }));
+
+  // Normalise team member fields from API shape
+  const getAdminName = (member) =>
+    member.name ||
+    `${member.first_name || ''} ${member.last_name || ''}`.trim() ||
+    member.email ||
+    '—';
+
+  const getAdminAddress = (member) =>
+    member.address || member.location || '—';
+
+  const getAdminPhone = (member) =>
+    member.phone || member.phone_number || '—';
+
+  const getAdminGender = (member) =>
+    member.gender || '—';
+
+  // Use real team data if available, fall back to ADMINS
+  const adminList = team && team.length > 0 ? team : ADMINS;
 
   // ── List view ──
   if (adminView === 'list') {
@@ -581,50 +677,54 @@ const AdminTab = () => {
               </tr>
             </thead>
             <tbody>
-              {ADMINS.map(admin => (
-                <tr key={admin.id} className="border-t border-gray-50 hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3"><input type="checkbox" className="w-3.5 h-3.5" /></td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
-                        style={{ background: '#8D5D1D' }}>
-                        {admin.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+              {adminList.map(member => {
+                const displayName = getAdminName(member);
+                const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                return (
+                  <tr key={member.id} className="border-t border-gray-50 hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3"><input type="checkbox" className="w-3.5 h-3.5" /></td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                          style={{ background: '#8D5D1D' }}>
+                          {initials}
+                        </div>
+                        <span className="font-medium text-[#1A1A1A]">{displayName}</span>
                       </div>
-                      <span className="font-medium text-[#1A1A1A]">{admin.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-[#555]">{admin.gender}</td>
-                  <td className="px-4 py-3 text-[#555]">{admin.address}</td>
-                  <td className="px-4 py-3 text-[#555]">{admin.email}</td>
-                  <td className="px-4 py-3 text-[#555]">{admin.phone}</td>
-                  <td className="px-4 py-3 relative">
-                    <button
-                      onClick={() => setMenuOpen(menuOpen === admin.id ? null : admin.id)}
-                      className="p-1 rounded hover:bg-gray-100 transition-colors"
-                    >
-                      <MoreHorizontal size={14} className="text-[#888]" />
-                    </button>
-                    {menuOpen === admin.id && (
-                      <div className="absolute right-6 top-8 bg-white rounded-xl shadow-lg border border-gray-100 z-10 py-1 w-32">
-                        <button
-                          className="w-full text-left px-4 py-2 text-[12px] hover:bg-gray-50 text-[#1A1A1A]"
-                          onClick={() => { setSelectedAdmin(admin); setAdminView('view'); setMenuOpen(null); }}
-                        >
-                          View
-                        </button>
-                        <button className="w-full text-left px-4 py-2 text-[12px] hover:bg-gray-50 text-[#1A1A1A]">Edit</button>
-                        <button className="w-full text-left px-4 py-2 text-[12px] hover:bg-gray-50 text-red-500">Remove</button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-4 py-3 text-[#555]">{getAdminGender(member)}</td>
+                    <td className="px-4 py-3 text-[#555]">{getAdminAddress(member)}</td>
+                    <td className="px-4 py-3 text-[#555]">{member.email}</td>
+                    <td className="px-4 py-3 text-[#555]">{getAdminPhone(member)}</td>
+                    <td className="px-4 py-3 relative">
+                      <button
+                        onClick={() => setMenuOpen(menuOpen === member.id ? null : member.id)}
+                        className="p-1 rounded hover:bg-gray-100 transition-colors"
+                      >
+                        <MoreHorizontal size={14} className="text-[#888]" />
+                      </button>
+                      {menuOpen === member.id && (
+                        <div className="absolute right-6 top-8 bg-white rounded-xl shadow-lg border border-gray-100 z-10 py-1 w-32">
+                          <button
+                            className="w-full text-left px-4 py-2 text-[12px] hover:bg-gray-50 text-[#1A1A1A]"
+                            onClick={() => { setSelectedAdmin(member); setAdminView('view'); setMenuOpen(null); }}
+                          >
+                            View
+                          </button>
+                          <button className="w-full text-left px-4 py-2 text-[12px] hover:bg-gray-50 text-[#1A1A1A]">Edit</button>
+                          <button className="w-full text-left px-4 py-2 text-[12px] hover:bg-gray-50 text-red-500">Remove</button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 
           {/* Pagination */}
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-50">
-            <span className="text-[11px] text-[#888]">Showing 1–{ADMINS.length} of {ADMINS.length}</span>
+            <span className="text-[11px] text-[#888]">Showing 1–{adminList.length} of {adminList.length}</span>
             <div className="flex items-center gap-1">
               {[1, 2, 3].map(n => (
                 <button key={n}
@@ -644,6 +744,15 @@ const AdminTab = () => {
   // ── View Admin ──
   if (adminView === 'view' && selectedAdmin) {
     const a = selectedAdmin;
+    const displayName = getAdminName(a);
+    const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    const firstName = a.first_name || a.firstName || displayName.split(' ')[0] || '—';
+    const lastName  = a.last_name  || a.lastName  || displayName.split(' ').slice(1).join(' ') || '—';
+    const dob       = a.dob || a.date_of_birth || '—';
+    const city      = a.city || '—';
+    const state     = a.state || '—';
+    const zip       = a.zip || a.postal_code || '—';
+
     return (
       <div className="flex flex-col gap-4">
         {/* Header */}
@@ -667,11 +776,11 @@ const AdminTab = () => {
         <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center gap-2">
           <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-[18px] font-bold"
             style={{ background: '#8D5D1D' }}>
-            {a.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+            {initials}
           </div>
-          <p className="text-[16px] font-bold" style={{ color: '#8D5D1D' }}>{a.name}</p>
+          <p className="text-[16px] font-bold" style={{ color: '#8D5D1D' }}>{displayName}</p>
           <p className="text-[12px] text-[#888]">Admin</p>
-          <p className="text-[12px] text-[#888]">{a.city}, {a.state}</p>
+          <p className="text-[12px] text-[#888]">{city}, {state}</p>
           <button
             onClick={() => setAdminView('roles')}
             className="mt-2 px-4 py-1.5 rounded-xl text-white text-[12px] font-semibold"
@@ -686,9 +795,9 @@ const AdminTab = () => {
           <p className="text-[14px] font-bold text-[#1A1A1A] mb-4">Personal Information</p>
           <div className="grid gap-x-6 gap-y-3 mb-4" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
             {[
-              ['First Name', a.firstName],
-              ['Last Name', a.lastName],
-              ['Date of Birth', a.dob],
+              ['First Name', firstName],
+              ['Last Name', lastName],
+              ['Date of Birth', dob],
             ].map(([label, val]) => (
               <div key={label}>
                 <p className="text-[11px] text-[#888] mb-0.5">{label}</p>
@@ -698,9 +807,9 @@ const AdminTab = () => {
           </div>
           <div className="grid gap-x-6 gap-y-3" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
             {[
-              ['Email', a.email],
-              ['Phone', a.phone],
-              ['User Role', a.role],
+              ['Email', a.email || '—'],
+              ['Phone', getAdminPhone(a)],
+              ['User Role', a.role || a.designation || '—'],
             ].map(([label, val]) => (
               <div key={label}>
                 <p className="text-[11px] text-[#888] mb-0.5">{label}</p>
@@ -716,10 +825,10 @@ const AdminTab = () => {
           <p className="text-[14px] font-bold text-[#1A1A1A] mb-4">Address</p>
           <div className="grid gap-x-6 gap-y-3" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr' }}>
             {[
-              ['Home Address', a.address],
-              ['State', a.state],
-              ['City', a.city],
-              ['Zip', a.zip],
+              ['Home Address', getAdminAddress(a)],
+              ['State', state],
+              ['City', city],
+              ['Zip', zip],
             ].map(([label, val]) => (
               <div key={label}>
                 <p className="text-[11px] text-[#888] mb-0.5">{label}</p>
@@ -876,10 +985,58 @@ const OrgProfilePage = () => {
   const [activeTab, setActiveTab] = useState('Overview');
   const [openModalKey, setOpenModalKey] = useState(null);
 
-  const tabs = ['Overview', 'Media', 'Admin'];
+  const [profile, setProfile] = useState(null);
+  const [media, setMedia]     = useState({ videos: [], images: [] });
+  const [team, setTeam]       = useState([]);
+
+  useEffect(() => {
+    authAPI.getMe()
+      .then(r => {
+        const user = r.data?.data || {};
+        const p = user.profile || {};
+        setProfile({
+          ...p,
+          email: p.business_email || user.email || '',
+          address: p.business_address || p.location || '',
+        });
+      })
+      .catch(() => {});
+    orgAPI.getMedia()
+      .then(r => {
+        const d = r.data?.data || r.data || {};
+        setMedia({
+          videos: d.videos || d.video || (Array.isArray(d) ? d.filter(m => m.media_type === 'video') : []),
+          images: d.images || d.image || (Array.isArray(d) ? d.filter(m => m.media_type === 'image') : []),
+        });
+      })
+      .catch(() => {});
+    orgAPI.getTeam()
+      .then(r => {
+        const d = r.data?.data || r.data || [];
+        setTeam(Array.isArray(d) ? d : (d.members || d.results || []));
+      })
+      .catch(() => {});
+  }, []);
+
+  const tabs = ['Overview', 'Media'];//, 'Admin'];
 
   const openModal  = key => setOpenModalKey(key);
   const closeModal = ()  => setOpenModalKey(null);
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('logo', file);
+    try {
+      const r = await orgAPI.uploadLogo(fd);
+      const logo = r.data?.data?.logo || r.data?.logo;
+      if (logo) setProfile(p => ({ ...p, logo }));
+      toast.success('Logo updated!');
+    } catch {
+      toast.error('Failed to upload logo');
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -920,9 +1077,9 @@ const OrgProfilePage = () => {
         </div>
 
         {/* Tab content */}
-        {activeTab === 'Overview' && <OverviewTab openModal={openModal} />}
-        {activeTab === 'Media'    && <MediaTab openModal={openModal} />}
-        {activeTab === 'Admin'    && <AdminTab />}
+        {activeTab === 'Overview' && <OverviewTab openModal={openModal} profile={profile} media={media} onLogoUpload={handleLogoUpload} />}
+        {activeTab === 'Media'    && <MediaTab openModal={openModal} media={media} />}
+        {activeTab === 'Admin'    && <AdminTab team={team} />}
       </div>
 
       {/* Modals */}

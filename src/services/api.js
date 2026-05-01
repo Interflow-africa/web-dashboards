@@ -100,6 +100,7 @@ export const orgAPI = {
   getMedia: () => api.get('/organization/media/'),
   uploadMedia: (data) => api.post('/organization/media/', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   deleteMedia: (pk) => api.delete(`/organization/media/${pk}/`),
+  uploadLogo: (data) => api.patch('/organization/profile/', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getTeam: () => api.get('/organization/team/'),
   inviteTeamMember: (data) => api.post('/organization/team/invite/', data),
   updateTeamMember: (pk, data) => api.patch(`/organization/team/${pk}/`, data),

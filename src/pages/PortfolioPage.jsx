@@ -70,7 +70,14 @@ export const PortfolioPage = () => {
                   </div>
                 )}
               </div>
-              <button className="btn btn-outline btn-sm" onClick={() => artistAPI.getShareLink().then(r => { navigator.clipboard.writeText(r.data.data.share_url); toast.success('Portfolio link copied!'); }).catch(() => toast.error('Failed'))}>
+              <button className="btn btn-outline btn-sm" onClick={() => artistAPI.getShareLink().then(r => {
+                const apiUrl = r.data?.data?.share_url || '';
+                const match = apiUrl.match(/\/public\/([^/?#]+)\/?/);
+                const token = match?.[1];
+                const url = token ? `${window.location.origin}/portfolio/public/${token}/` : apiUrl;
+                navigator.clipboard.writeText(url);
+                toast.success('Portfolio link copied!');
+              }).catch(() => toast.error('Failed'))}>
                 🔗 Share Portfolio
               </button>
             </div>
