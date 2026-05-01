@@ -166,8 +166,8 @@ const ArtistDashboard = () => {
   const [oppPage, setOppPage]       = useState(0);
   const [connectingId, setConnectingId] = useState(null);
 
-  const firstName = user?.first_name || user?.email?.split('@')[0] || 'Artist';
-  const fullName  = user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : firstName;
+  const firstName = user?.profile.first_name || user?.email?.split('@')[0] || 'Artist';
+  const fullName  = user?.profile.full_name ? `${user.profile.full_name || user.profile.first_name}`.trim() : firstName;
 
   useEffect(() => {
     // Fire all dashboard requests in parallel

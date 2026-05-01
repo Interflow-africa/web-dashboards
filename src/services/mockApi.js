@@ -250,9 +250,9 @@ export const mockConnectionsAPI = {
 
 /* ─── Mock Opportunities API ─────────────────────────────────────── */
 const MOCK_OPPS = [
-  { id: 1, title: 'Lead Dancer – Spring Showcase', org: 'City Ballet', type: 'Audition', deadline: '2026-04-15', location: 'New York, NY', pay: '$800/week', discipline: 'Dance' },
-  { id: 2, title: 'Session Musician Wanted',       org: 'Studio 88',   type: 'Gig',      deadline: '2026-04-10', location: 'Remote',        pay: '$200/session', discipline: 'Music' },
-  { id: 3, title: 'Theatre Actor – Summer Run',    org: 'Playhouse Co', type: 'Audition', deadline: '2026-05-01', location: 'Chicago, IL',   pay: '$600/week',  discipline: 'Theatre' },
+  { id: 1, title: 'Lead Dancer – Spring Showcase', org: 'City Ballet', type: 'Audition', deadline: '2026-04-15', location: 'New York, NY', pay: '₦1,280,000/week', discipline: 'Dance' },
+  { id: 2, title: 'Session Musician Wanted',       org: 'Studio 88',   type: 'Gig',      deadline: '2026-04-10', location: 'Remote',        pay: '₦320,000/session', discipline: 'Music' },
+  { id: 3, title: 'Theatre Actor – Summer Run',    org: 'Playhouse Co', type: 'Audition', deadline: '2026-05-01', location: 'Chicago, IL',   pay: '₦960,000/week',  discipline: 'Theatre' },
 ];
 
 export const mockOpportunitiesAPI = {

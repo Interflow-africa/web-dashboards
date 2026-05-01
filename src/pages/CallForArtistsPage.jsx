@@ -248,6 +248,7 @@ const CallForArtistsPage = () => {
     if (!form.email.trim())              e.email               = 'Email is required';
     if (!form.city.trim())               e.city                = 'City is required';
     if (!form.country.trim())            e.country             = 'Country is required';
+    if (!form.why_join.trim())           e.why_join            = 'Please tell us why you want to join';
     if (!form.primary_discipline)        e.primary_discipline  = 'Please select your discipline';
     if (form.primary_discipline === 'others' && !form.custom_discipline.trim())
                                          e.custom_discipline   = 'Please specify your discipline';

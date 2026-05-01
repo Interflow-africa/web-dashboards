@@ -56,12 +56,12 @@ const EXPERIENCE_OPTIONS = [
 ];
 
 const SALARY_RANGE_OPTIONS = [
-  { label: 'None',           value: '' },
-  { label: '$0 – $50',       value: '0_50' },
-  { label: '$50 – $100',     value: '50_100' },
-  { label: '$100 – $500',    value: '100_500' },
-  { label: '$500 – $1,000',  value: '500_1000' },
-  { label: '$1,000+',        value: '1000_plus' },
+  { label: 'None',                      value: '' },
+  { label: '₦0 – ₦80,000',             value: '0_50' },
+  { label: '₦80,000 – ₦160,000',       value: '50_100' },
+  { label: '₦160,000 – ₦800,000',      value: '100_500' },
+  { label: '₦800,000 – ₦1,600,000',    value: '500_1000' },
+  { label: '₦1,600,000+',              value: '1000_plus' },
 ];
 
 const PAYMENT_TYPE_OPTIONS = [
@@ -141,7 +141,7 @@ const buildFormSchema = (form) => {
       options: ['0 - 1 years', '1 - 4 years', '4 - 7 years', '7+ years'] });
   if (form.salary_range)
     schema.push({ key: 'salary_range', label: 'Salary range', type: 'select', required: false,
-      options: ['$0 - $50', '$50 - $100', '$100 - $500', '$500 - $1000', '$1000+'] });
+      options: ['₦0 - ₦80,000', '₦80,000 - ₦160,000', '₦160,000 - ₦800,000', '₦800,000 - ₦1,600,000', '₦1,600,000+'] });
   if (form.requires_address)
     schema.push({ key: 'address', label: 'Address', type: 'text', required: false,
       placeholder: 'e.g No. 2, Kempton street, Orchid Estate, Ikoyi' });
