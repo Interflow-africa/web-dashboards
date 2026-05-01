@@ -582,7 +582,7 @@ const CallForArtistsPage = () => {
           {/* ── Section D: About You ── */}
           <SectionCard num="D" title="About You">
             <div className="flex flex-col gap-5">
-              <Field label="Why do you want to join? (optional)" error={errors.why_join}>
+              <Field label="Why do you want to join?" error={errors.why_join}>
                 <Textarea
                   placeholder="Share what this opportunity means to you and what you hope to contribute…"
                   value={form.why_join}
