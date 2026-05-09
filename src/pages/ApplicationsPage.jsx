@@ -143,8 +143,8 @@ const ApplicationsPage = () => {
       </div>
 
       {/* Search bar */}
-      <div className="flex gap-3 mb-5 justify-end">
-        <div className="relative max-w-[280px] w-full">
+      <div className="flex gap-2 mb-5 justify-end w-full sm:w-auto">
+        <div className="relative flex-1 sm:flex-none sm:w-[280px]">
           <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             value={search}

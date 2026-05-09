@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import toast from 'react-hot-toast';
@@ -19,7 +19,7 @@ const Toggle = ({ on, onToggle }) => (
 );
 
 /* ── Reusable field components ── */
-const Field = ({ label, value, onChange, type = 'text', placeholder = '' }) => (
+const Field = ({ label, value, onChange, type = 'text', placeholder = '', disabled = false }) => (
   <div className="flex flex-col">
     <label className="text-[12px] text-[#888] mb-1">{label}</label>
     <input
@@ -27,7 +27,8 @@ const Field = ({ label, value, onChange, type = 'text', placeholder = '' }) => (
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-[#8D5D1D] transition-colors"
+      disabled={disabled}
+      className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-[#8D5D1D] transition-colors disabled:bg-gray-50 disabled:text-gray-400"
     />
   </div>
 );
@@ -42,9 +43,11 @@ const SelectField = ({ label, value, onChange, options }) => (
         className="w-full appearance-none border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-800 outline-none focus:border-[#8D5D1D] transition-colors pr-8 bg-white"
       >
         <option value="">Select…</option>
-        {options.map((o) => (
-          <option key={o} value={o}>{o}</option>
-        ))}
+        {options.map((o) => {
+          const val = typeof o === 'object' ? o.value : o;
+          const lbl = typeof o === 'object' ? o.label : o;
+          return <option key={val} value={val}>{lbl}</option>;
+        })}
       </select>
       <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
     </div>
@@ -83,7 +86,7 @@ const IconCircle = ({ bg, children }) => (
 );
 
 /* ── Expandable row ── */
-const SettingRow = ({ label, expanded, onEdit, onClose, children }) => (
+const SettingRow = ({ label, expanded, onEdit, onClose, children, disabled = false }) => (
   <div className={`border rounded-xl transition-colors ${expanded ? 'border-[#8D5D1D]/40 bg-[#FDFAF5]' : 'border-gray-100 bg-white'}`}>
     <div className="flex items-center justify-between px-5 py-4">
       <span className="text-sm font-medium text-gray-800">{label}</span>
@@ -99,7 +102,8 @@ const SettingRow = ({ label, expanded, onEdit, onClose, children }) => (
         <button
           type="button"
           onClick={onEdit}
-          className="px-4 py-1.5 rounded-full text-sm font-medium border border-[#8D5D1D] text-[#8D5D1D] hover:bg-[#F5EED7] transition-colors"
+          disabled={disabled}
+          className="px-4 py-1.5 rounded-full text-sm font-medium border border-[#8D5D1D] text-[#8D5D1D] hover:bg-[#F5EED7] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           style={{ background: '#F5EED7' }}
         >
           Edit
@@ -114,17 +118,34 @@ const SettingRow = ({ label, expanded, onEdit, onClose, children }) => (
   </div>
 );
 
+const PRONOUN_OPTIONS = [
+  { value: 'he_him',            label: 'He / Him' },
+  { value: 'she_her',           label: 'She / Her' },
+  { value: 'they_them',         label: 'They / Them' },
+  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+];
+
+const CLOSE_REASONS = [
+  'I have a duplicate account',
+  'I am getting too many emails',
+  'I have privacy concern',
+  'I am receiving unwanted contact',
+  'Others',
+];
+
 /* ══════════════════════════════════════════════
    Main page
 ══════════════════════════════════════════════ */
 const SettingsPage = () => {
+  const [loading, setLoading] = useState(true);
+
   /* which row is open: key = "cardIndex-rowIndex" */
   const [open, setOpen] = useState(null);
   const toggle = (key) => setOpen((prev) => (prev === key ? null : key));
   const close = () => setOpen(null);
 
   /* ── Card 1: Portfolio Information ── */
-  const [portName, setPortName] = useState({ firstName: 'Dayo', lastName: 'Ajayi', location: '', pronouns: '' });
+  const [portName, setPortName] = useState({ firstName: '', lastName: '', location: '', pronouns: '' });
   const [portContact, setPortContact] = useState({ phone: '', address: '', city: '', state: '', zip: '' });
 
   /* ── Card 2: Notification Settings ── */
@@ -132,23 +153,50 @@ const SettingsPage = () => {
   const toggleNotif = (k) => setNotifs((p) => ({ ...p, [k]: !p[k] }));
 
   /* ── Card 3: URLs and Domains ── */
-  const [slug, setSlug] = useState('dayo-ajayi');
+  const [slug, setSlug] = useState('');
 
   /* ── Card 4: Account Management ── */
-  const [emailAddr, setEmailAddr] = useState('dayo.ajayi@example.com');
+  const [emailAddr, setEmailAddr] = useState('');
   const [closeReason, setCloseReason] = useState('');
   const [closeMessage, setCloseMessage] = useState('');
   const [closePassword, setClosePassword] = useState('');
+
+  /* ── Load profile on mount ── */
+  useEffect(() => {
+    authAPI.getMe()
+      .then((res) => {
+        const data    = res.data.data;
+        const profile = data.profile || {};
+
+        setEmailAddr(data.email || '');
+
+        setPortName({
+          firstName: profile.first_name || '',
+          lastName:  profile.last_name  || '',
+          location:  profile.location   || '',
+          pronouns:  profile.pronoun    || '',
+        });
+
+        setPortContact((prev) => ({
+          ...prev,
+          city: profile.city    || '',
+          state: profile.country || '',
+        }));
+
+        if (profile.share_token) setSlug(profile.share_token);
+      })
+      .catch(() => toast.error('Failed to load profile data'))
+      .finally(() => setLoading(false));
+  }, []);
 
   /* ── Specific save handlers ── */
   const savePortfolioInfo = async () => {
     try {
       await settingsAPI.updateProfile({
-        display_name: `${portName.firstName} ${portName.lastName}`.trim(),
         first_name: portName.firstName,
-        last_name: portName.lastName,
-        location: portName.location,
-        pronoun: portName.pronouns,
+        last_name:  portName.lastName,
+        location:   portName.location,
+        pronoun:    portName.pronouns,
       });
       toast.success('Profile updated!');
       close();
@@ -160,10 +208,10 @@ const SettingsPage = () => {
   const saveContactInfo = async () => {
     try {
       await settingsAPI.updateProfile({
-        phone: portContact.phone,
+        phone:   portContact.phone,
         address: portContact.address,
-        city: portContact.city,
-        state: portContact.state,
+        city:    portContact.city,
+        country: portContact.state,
       });
       toast.success('Contact info updated!');
       close();
@@ -176,8 +224,8 @@ const SettingsPage = () => {
     try {
       await settingsAPI.updateNotificationPrefs({
         email_new_connection: notifs.connection,
-        email_marketing: notifs.all,
-        inapp_profile_view: notifs.reachout,
+        email_marketing:      notifs.all,
+        inapp_profile_view:   notifs.reachout,
       });
       toast.success('Notification preferences saved!');
       close();
@@ -207,7 +255,7 @@ const SettingsPage = () => {
   };
 
   const handleCloseAccount = async () => {
-    if (!closeReason) { toast.error('Please select a reason'); return; }
+    if (!closeReason)  { toast.error('Please select a reason'); return; }
     if (!closePassword) { toast.error('Password is required to close account'); return; }
     try {
       await settingsAPI.deleteAccount({ password: closePassword, confirm: 'DELETE' });
@@ -217,14 +265,6 @@ const SettingsPage = () => {
       toast.error(getApiError(err, 'Failed to close account. Please check your password.'));
     }
   };
-
-  const CLOSE_REASONS = [
-    'I have a duplicate account',
-    'I am getting too many emails',
-    'I have privacy concern',
-    'I am receiving unwanted contact',
-    'Others',
-  ];
 
   return (
     <DashboardLayout>
@@ -256,6 +296,7 @@ const SettingsPage = () => {
               expanded={open === '1-0'}
               onEdit={() => toggle('1-0')}
               onClose={close}
+              disabled={loading}
             >
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -271,17 +312,17 @@ const SettingsPage = () => {
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <SelectField
+                  <Field
                     label="Location"
                     value={portName.location}
                     onChange={(e) => setPortName((p) => ({ ...p, location: e.target.value }))}
-                    options={['Lagos, Nigeria', 'Abuja, Nigeria', 'London, UK', 'New York, USA']}
+                    placeholder="e.g. Abuja, Nigeria"
                   />
                   <SelectField
                     label="Pronouns"
                     value={portName.pronouns}
                     onChange={(e) => setPortName((p) => ({ ...p, pronouns: e.target.value }))}
-                    options={['He/Him', 'She/Her', 'They/Them', 'Prefer not to say']}
+                    options={PRONOUN_OPTIONS}
                   />
                 </div>
                 <FormActions onSave={savePortfolioInfo} onCancel={close} />
@@ -294,6 +335,7 @@ const SettingsPage = () => {
               expanded={open === '1-1'}
               onEdit={() => toggle('1-1')}
               onClose={close}
+              disabled={loading}
             >
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -306,12 +348,12 @@ const SettingsPage = () => {
                   />
                 </div>
                 <p className="text-[12px] text-[#888] -mb-2">Current Address</p>
-                <Field
+                {/* <Field
                   label="Address"
                   value={portContact.address}
                   onChange={(e) => setPortContact((p) => ({ ...p, address: e.target.value }))}
                   placeholder="Street address"
-                />
+                /> */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <Field
                     label="City"
@@ -319,15 +361,15 @@ const SettingsPage = () => {
                     onChange={(e) => setPortContact((p) => ({ ...p, city: e.target.value }))}
                   />
                   <Field
-                    label="State"
+                    label="Country"
                     value={portContact.state}
                     onChange={(e) => setPortContact((p) => ({ ...p, state: e.target.value }))}
                   />
-                  <Field
+                  {/* <Field
                     label="Zip"
                     value={portContact.zip}
                     onChange={(e) => setPortContact((p) => ({ ...p, zip: e.target.value }))}
-                  />
+                  /> */}
                 </div>
                 <FormActions onSave={saveContactInfo} onCancel={close} />
               </div>
@@ -398,6 +440,7 @@ const SettingsPage = () => {
               expanded={open === '3-0'}
               onEdit={() => toggle('3-0')}
               onClose={close}
+              disabled={loading}
             >
               <div className="flex flex-col gap-4">
                 <p className="text-xs text-gray-500 leading-relaxed">
@@ -443,6 +486,7 @@ const SettingsPage = () => {
               expanded={open === '4-0'}
               onEdit={() => toggle('4-0')}
               onClose={close}
+              disabled={loading}
             >
               <div className="flex flex-col gap-4">
                 <Field

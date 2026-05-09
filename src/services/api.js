@@ -146,7 +146,7 @@ export const applicationsAPI = {
   orgAllApplications: (params) => api.get('/applications/all/', { params }),
   orgAll: (params) => api.get('/applications/manage/', { params }),
   orgDetail: (pk) => api.get(`/applications/manage/${pk}/`),
-  orgByOpportunity: (oppPk, params) => api.get(`/applications/manage/opportunity/${oppPk}/`, { params }),
+  orgByOpportunity: (oppPk, params) => api.get(`applications/opportunity/${oppPk}/`, { params }),
   updateStatus: (pk, data) => api.patch(`/applications/${pk}/status/`, data),
 };
 
