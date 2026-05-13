@@ -64,7 +64,7 @@ const OppCard = ({ opp }) => {
           More Info
         </button>
         <button
-          onClick={() => navigate('/opportunities')}
+          onClick={() => navigate('/opportunities', { state: { applyOpp: opp } })}
           className="flex-1 py-2 rounded-full bg-[#8B6914] text-white text-[12.5px] font-semibold hover:bg-[#7A5C12] transition-colors"
         >
           Apply

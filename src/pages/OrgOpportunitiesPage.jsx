@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { X, Plus, ChevronDown, Search, SlidersHorizontal, ArrowRight, Check, Trash2, XCircle, Send } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { opportunitiesAPI, applicationsAPI } from '@/services/index';
@@ -550,8 +551,8 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-[780px] p-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center sm:p-4">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-[780px] p-5 sm:p-6 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-1">
           <h2 className="font-bold text-[18px] text-gray-900">Create Opportunity</h2>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500">
@@ -742,6 +743,8 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
    MAIN PAGE
 ──────────────────────────────────────────────────────────────────*/
 const OrgOpportunitiesPage = () => {
+  const location = useLocation();
+
   /* ── Data ── */
   const [opps, setOpps]       = useState([]);
   const [loading, setLoading] = useState(true);
@@ -763,6 +766,14 @@ const OrgOpportunitiesPage = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [viewOpp,         setViewOpp]         = useState(null);
 
+  /* ── Auto-open create modal when navigated from profile page ── */
+  useEffect(() => {
+    if (location.state?.openCreate) {
+      setCreateModalOpen(true);
+      window.history.replaceState({}, '');
+    }
+  }, []);
+
   /* ── Debounce search input ── */
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
@@ -772,12 +783,12 @@ const OrgOpportunitiesPage = () => {
   /* ── Fetch opportunities ── */
   const loadOpps = useCallback(() => {
     setLoading(true);
-    const params = { status: 'published' };
-    if (debouncedSearch) params.search            = debouncedSearch;
-    if (filterCategory)  params.category          = filterCategory;
+    const params = {};
+    if (debouncedSearch) params.search             = debouncedSearch;
+    if (filterCategory)  params.category           = filterCategory;
     if (filterStatus)    params.application_status = filterStatus;
-    if (filterPayment)   params.payment_type       = filterPayment;
-    if (filterRemote)    params.is_remote          = filterRemote;
+    if (filterPayment)   params.payment_type        = filterPayment;
+    if (filterRemote)    params.is_remote           = filterRemote;
 
     opportunitiesAPI.manage(params)
       .then(r => {

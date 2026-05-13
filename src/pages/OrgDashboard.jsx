@@ -49,7 +49,7 @@ const ActiveOppsCard = ({ rows = [] }) => {
                   <tr key={row.id} className="border-t border-gray-50">
                     <td className="py-2 text-[#1A1A1A] truncate max-w-[120px]">{row.title || row.name || '—'}</td>
                     <td className="py-2 text-[#1A1A1A]">{row.applications_count ?? row.total_applications ?? row.applications ?? 0}</td>
-                    <td className="py-2"><StatusBadge status={row.status} /></td>
+                    <td className="py-2"><StatusBadge status={row.status_label} /></td>
                   </tr>
                 ))
               : (
@@ -216,10 +216,10 @@ const OrgDashboard = () => {
           return d.percentage ?? d.progress ?? d.completion_percentage ?? 0;
         })(),
       });
-      if (activeOpp.status === 'fulfilled') {
+      // if (activeOpp.status === 'fulfilled') {
         const d = activeOpp.value.data?.data || activeOpp.value.data || {};
-        setActiveOpps(Array.isArray(d) ? d : (d.results || []));
-      }
+        setActiveOpps(Array.isArray(d) ? d : (d.items || d.results || []));
+      // }
       if (appsOv.status === 'fulfilled') {
         const d = appsOv.value.data?.data || appsOv.value.data || {};
         setAppsOverview(Array.isArray(d) ? d : (d.results || []));

@@ -65,12 +65,12 @@ const DashboardLayout = ({ children }) => {
   const links  = isOrg ? ORG_NAV : ARTIST_NAV;
 
   const initials = user
-    ? `${user.profile.first_name?.[0] ?? ''}${user.profile.last_name?.[0] ?? ''}`.toUpperCase() || user.profile.organization_name?.[0] || 'U'
+    ? `${user.profile?.first_name?.[0] ?? ''}${user.profile?.last_name?.[0] ?? ''}`.toUpperCase() || user.profile?.organization_name?.[0] || 'U'
     : 'U';
 
   const displayName = user
-    ? `${user.profile.first_name ?? ""} ${user.profile.last_name ?? ""}`.trim() ||
-      user.profile.organization_name ||
+    ? `${user.profile?.first_name ?? ""} ${user.profile?.last_name ?? ""}`.trim() ||
+      user.profile?.organization_name ||
       user.email?.split("@")[0]
     : "";
 
@@ -202,9 +202,9 @@ const DashboardLayout = ({ children }) => {
                 </span>
               )}
             </button>
-            <button className="hidden sm:flex w-9 h-9 rounded-full items-center justify-center hover:bg-[#F5F5F5] text-[#666] transition-colors">
+            {/* <button className="hidden sm:flex w-9 h-9 rounded-full items-center justify-center hover:bg-[#F5F5F5] text-[#666] transition-colors">
               <Mail size={17} />
-            </button>
+            </button> */}
             <button
               onClick={() => navigate('/settings')}
               className="w-9 h-9 rounded-full bg-[#1A1A1A] flex items-center justify-center text-white text-[12px] font-bold ml-1"

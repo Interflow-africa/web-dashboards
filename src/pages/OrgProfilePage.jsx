@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, X, Plus, Edit2, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, X, Plus, Edit2, MoreHorizontal, Image, Film } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import useAuthStore from '@/store/authStore';
 import { authAPI, orgAPI } from '@/services/api';
@@ -180,10 +180,24 @@ const Modal = ({ title, onClose, children }) => (
 );
 
 // ── Modal: Edit About ──────────────────────────────────────────────────────
-const EditAboutModal = ({ onClose }) => {
-  const [text, setText] = useState(
-    'Wild Dreams is a Lagos-based media and entertainment agency dedicated to amplifying African creative voices. We produce, curate, and distribute music, film, and visual art across the continent and beyond.'
-  );
+const EditAboutModal = ({ onClose, profile, onSaved }) => {
+  const [text, setText] = useState(profile?.description || '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await orgAPI.updateProfile({ description: text });
+      toast.success('About updated!');
+      onSaved?.();
+      onClose();
+    } catch {
+      toast.error('Failed to update about');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Modal title="Edit About Us" onClose={onClose}>
       <label className="block text-[12px] font-medium text-[#444] mb-1.5">About Us</label>
@@ -196,10 +210,12 @@ const EditAboutModal = ({ onClose }) => {
       />
       <div className="flex justify-end mt-4">
         <button
-          className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold"
+          onClick={handleSave}
+          disabled={saving}
+          className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold disabled:opacity-60"
           style={{ background: '#8D5D1D' }}
         >
-          Update
+          {saving ? 'Saving…' : 'Update'}
         </button>
       </div>
     </Modal>
@@ -207,9 +223,29 @@ const EditAboutModal = ({ onClose }) => {
 };
 
 // ── Modal: Edit Address ────────────────────────────────────────────────────
-const EditAddressModal = ({ onClose }) => {
-  const [form, setForm] = useState({ address: '14 Babs Animashaun Road, Surulere', city: 'Lagos', country: 'Nigeria' });
+const EditAddressModal = ({ onClose, profile, onSaved }) => {
+  const [form, setForm] = useState({
+    address: profile?.business_address || profile?.address || '',
+    city: profile?.city || '',
+    country: profile?.country || '',
+  });
+  const [saving, setSaving] = useState(false);
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await orgAPI.updateProfile({ business_address: form.address, city: form.city, country: form.country });
+      toast.success('Address updated!');
+      onSaved?.();
+      onClose();
+    } catch {
+      toast.error('Failed to update address');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Modal title="Edit Company Address" onClose={onClose}>
       <div className="flex flex-col gap-3">
@@ -221,31 +257,53 @@ const EditAddressModal = ({ onClose }) => {
         <div className="flex gap-3">
           <div className="flex-1">
             <label className="block text-[12px] font-medium text-[#444] mb-1">City</label>
-            <select value={form.city} onChange={set('city')}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30 bg-white">
-              {['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan'].map(c => <option key={c}>{c}</option>)}
-            </select>
+            <input value={form.city} onChange={set('city')}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30" />
           </div>
           <div className="flex-1">
             <label className="block text-[12px] font-medium text-[#444] mb-1">Country</label>
-            <select value={form.country} onChange={set('country')}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30 bg-white">
-              {['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'Senegal'].map(c => <option key={c}>{c}</option>)}
-            </select>
+            <input value={form.country} onChange={set('country')}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30" />
           </div>
         </div>
       </div>
       <div className="flex justify-end mt-4">
-        <button className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold" style={{ background: '#8D5D1D' }}>Update</button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold disabled:opacity-60"
+          style={{ background: '#8D5D1D' }}
+        >
+          {saving ? 'Saving…' : 'Update'}
+        </button>
       </div>
     </Modal>
   );
 };
 
 // ── Modal: Edit Contact ────────────────────────────────────────────────────
-const EditContactModal = ({ onClose }) => {
-  const [form, setForm] = useState({ phone: '+234 803 000 1111', email: 'hello@wilddreams.ng' });
+const EditContactModal = ({ onClose, profile, onSaved }) => {
+  const [form, setForm] = useState({
+    phone: profile?.phone_number || '',
+    email: profile?.business_email || profile?.email || '',
+  });
+  const [saving, setSaving] = useState(false);
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await orgAPI.updateProfile({ phone_number: form.phone, business_email: form.email });
+      toast.success('Contact updated!');
+      onSaved?.();
+      onClose();
+    } catch {
+      toast.error('Failed to update contact');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Modal title="Edit Contact Information" onClose={onClose}>
       <div className="flex flex-col gap-3">
@@ -261,7 +319,14 @@ const EditContactModal = ({ onClose }) => {
         </div>
       </div>
       <div className="flex justify-end mt-4">
-        <button className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold" style={{ background: '#8D5D1D' }}>Update</button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold disabled:opacity-60"
+          style={{ background: '#8D5D1D' }}
+        >
+          {saving ? 'Saving…' : 'Update'}
+        </button>
       </div>
     </Modal>
   );
@@ -298,86 +363,161 @@ const AddRelevantWorkModal = ({ onClose }) => {
 };
 
 // ── Modal: Add Video ───────────────────────────────────────────────────────
-const AddVideoModal = ({ onClose }) => {
-  const [form, setForm] = useState({ ytLink: '', title: '', subtitle: '', description: '', visible: false });
+const AddVideoModal = ({ onClose, onSaved }) => {
+  const [form, setForm]         = useState({ title: '', description: '', order: '' });
+  const [file, setFile]         = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const fileRef = useRef();
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const handleSubmit = async () => {
+    if (!file)             { toast.error('Please select a video file'); return; }
+    if (!form.title.trim()) { toast.error('Title is required'); return; }
+    setSubmitting(true);
+    try {
+      const fd = new FormData();
+      fd.append('media_type',  'video');
+      fd.append('file',        file);
+      fd.append('title',       form.title);
+      fd.append('description', form.description);
+      if (form.order) fd.append('order', form.order);
+      await orgAPI.uploadMedia(fd);
+      toast.success('Video uploaded!');
+      onSaved?.();
+      onClose();
+    } catch {
+      toast.error('Failed to upload video');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <Modal title="Add Video" onClose={onClose}>
       <div className="flex flex-col gap-3">
-        {/* Cover image upload */}
         <div>
-          <label className="block text-[12px] font-medium text-[#444] mb-1">Cover Image</label>
-          <div className="border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center py-6 gap-2 cursor-pointer hover:bg-gray-50 transition-all">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#AAAAAA" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21,15 16,10 5,21" />
-            </svg>
-            <span className="text-[12px] text-[#AAA]">Click to upload cover image</span>
+          <label className="block text-[12px] font-medium text-[#444] mb-1">Video File <span className="text-red-400">*</span></label>
+          <div
+            onClick={() => fileRef.current?.click()}
+            className="border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center py-6 gap-2 cursor-pointer hover:bg-gray-50 transition-all"
+          >
+            <Film size={24} color="#AAAAAA" />
+            <span className="text-[12px] text-[#AAA]">
+              {file ? file.name : 'Click to select a video file'}
+            </span>
           </div>
+          <input ref={fileRef} type="file" accept="video/*" className="hidden"
+            onChange={e => setFile(e.target.files[0] || null)} />
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-[#444] mb-1">YouTube Link <span className="text-red-400">*</span></label>
-          <input value={form.ytLink} onChange={set('ytLink')} placeholder="https://youtube.com/watch?v=..."
+          <label className="block text-[12px] font-medium text-[#444] mb-1">Title <span className="text-red-400">*</span></label>
+          <input value={form.title} onChange={set('title')} placeholder="e.g. Lagos Sound Fest – Highlights"
             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30" />
-        </div>
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="block text-[12px] font-medium text-[#444] mb-1">Title <span className="text-red-400">*</span></label>
-            <input value={form.title} onChange={set('title')}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30" />
-          </div>
-          <div className="flex-1">
-            <label className="block text-[12px] font-medium text-[#444] mb-1">Subtitle <span className="text-red-400">*</span></label>
-            <input value={form.subtitle} onChange={set('subtitle')}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30" />
-          </div>
         </div>
         <div>
           <label className="block text-[12px] font-medium text-[#444] mb-1">Description</label>
           <textarea value={form.description} onChange={set('description')} rows={3}
             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30 resize-none" />
         </div>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={form.visible} onChange={e => setForm(p => ({ ...p, visible: e.target.checked }))}
-            className="w-4 h-4 rounded" style={{ accentColor: '#8D5D1D' }} />
-          <span className="text-[12px] text-[#444]">Allow Video to be visible</span>
-        </label>
+        <div>
+          <label className="block text-[12px] font-medium text-[#444] mb-1">Display Order</label>
+          <input type="number" min="1" value={form.order} onChange={set('order')} placeholder="1"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30" />
+        </div>
       </div>
-      <div className="flex justify-end mt-4">
-        <button className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold" style={{ background: '#8D5D1D' }}>Save</button>
+      <div className="flex justify-end gap-2 mt-4">
+        <button onClick={onClose} className="px-4 py-2 rounded-xl text-[13px] font-medium border border-gray-200 text-gray-600 hover:bg-gray-50">Cancel</button>
+        <button onClick={handleSubmit} disabled={submitting}
+          className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold disabled:opacity-60"
+          style={{ background: '#8D5D1D' }}>
+          {submitting ? 'Uploading…' : 'Save'}
+        </button>
       </div>
     </Modal>
   );
 };
 
 // ── Modal: Add Image ───────────────────────────────────────────────────────
-const AddImageModal = ({ onClose }) => {
-  const [form, setForm] = useState({ title: '', subtitle: '' });
+const AddImageModal = ({ onClose, onSaved }) => {
+  const [form, setForm]         = useState({ title: '', description: '', order: '' });
+  const [file, setFile]         = useState(null);
+  const [preview, setPreview]   = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const fileRef = useRef();
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const handleFile = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setFile(f);
+    setPreview(URL.createObjectURL(f));
+  };
+
+  const handleSubmit = async () => {
+    if (!file)             { toast.error('Please select an image file'); return; }
+    if (!form.title.trim()) { toast.error('Title is required'); return; }
+    setSubmitting(true);
+    try {
+      const fd = new FormData();
+      fd.append('media_type',  'photo');
+      fd.append('file',        file);
+      fd.append('title',       form.title);
+      fd.append('description', form.description);
+      if (form.order) fd.append('order', form.order);
+      await orgAPI.uploadMedia(fd);
+      toast.success('Image uploaded!');
+      onSaved?.();
+      onClose();
+    } catch {
+      toast.error('Failed to upload image');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <Modal title="Add Image" onClose={onClose}>
       <div className="flex flex-col gap-3">
         <div>
-          <label className="block text-[12px] font-medium text-[#444] mb-1">Image File</label>
-          <div className="border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center py-6 gap-2 cursor-pointer hover:bg-gray-50 transition-all">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#AAAAAA" strokeWidth="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21,15 16,10 5,21" />
-            </svg>
-            <span className="text-[12px] text-[#AAA]">Click to upload image</span>
+          <label className="block text-[12px] font-medium text-[#444] mb-1">Image File <span className="text-red-400">*</span></label>
+          <div
+            onClick={() => fileRef.current?.click()}
+            className="border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center py-6 gap-2 cursor-pointer hover:bg-gray-50 transition-all overflow-hidden"
+          >
+            {preview ? (
+              <img src={preview} alt="preview" className="max-h-[140px] rounded-lg object-contain" />
+            ) : (
+              <>
+                <Image size={24} color="#AAAAAA" />
+                <span className="text-[12px] text-[#AAA]">Click to upload image</span>
+              </>
+            )}
           </div>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
         </div>
         <div>
           <label className="block text-[12px] font-medium text-[#444] mb-1">Title <span className="text-red-400">*</span></label>
-          <input value={form.title} onChange={set('title')}
+          <input value={form.title} onChange={set('title')} placeholder="e.g. Season Poster"
             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30" />
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-[#444] mb-1">Subtitle <span className="text-gray-400">(optional)</span></label>
-          <input value={form.subtitle} onChange={set('subtitle')}
+          <label className="block text-[12px] font-medium text-[#444] mb-1">Description <span className="text-gray-400">(optional)</span></label>
+          <input value={form.description} onChange={set('description')} placeholder="e.g. 2026 season poster."
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30" />
+        </div>
+        <div>
+          <label className="block text-[12px] font-medium text-[#444] mb-1">Display Order</label>
+          <input type="number" min="1" value={form.order} onChange={set('order')} placeholder="1"
             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30" />
         </div>
       </div>
-      <div className="flex justify-end mt-4">
-        <button className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold" style={{ background: '#8D5D1D' }}>Save</button>
+      <div className="flex justify-end gap-2 mt-4">
+        <button onClick={onClose} className="px-4 py-2 rounded-xl text-[13px] font-medium border border-gray-200 text-gray-600 hover:bg-gray-50">Cancel</button>
+        <button onClick={handleSubmit} disabled={submitting}
+          className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold disabled:opacity-60"
+          style={{ background: '#8D5D1D' }}>
+          {submitting ? 'Uploading…' : 'Save'}
+        </button>
       </div>
     </Modal>
   );
@@ -451,75 +591,7 @@ const OverviewTab = ({ openModal, profile, media, onLogoUpload }) => {
       </div>
 
       {/* RIGHT column */}
-      <div className="flex flex-col gap-5 flex-1" style={{ minWidth: 280 }}>
-        {/* Relevant Works */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[14px] font-bold text-[#1A1A1A]">Relevant works</p>
-            <button
-              onClick={() => openModal('addRelevantWork')}
-              className="flex items-center gap-1 text-[12px] font-medium border rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-all"
-              style={{ borderColor: '#D0D0D0', color: '#1A1A1A' }}
-            >
-              <Plus size={12} /> Add relevant works
-            </button>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            {relevantWorks.length > 0 ? relevantWorks.map(w => (
-              <div key={w.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div>
-                  <p className="text-[13px] font-semibold text-[#1A1A1A]">{w.title}</p>
-                  <p className="text-[11px] text-[#888]">{w.subtitle}</p>
-                </div>
-                <button className="text-[#AAAAAA] hover:text-[#8D5D1D] transition-colors">
-                  <Edit2 size={14} />
-                </button>
-              </div>
-            )) : (
-              <p className="text-[13px] text-[#AAAAAA] py-2">No relevant works added yet.</p>
-            )}
-          </div>
-
-          <button className="mt-3 text-[12px] font-semibold" style={{ color: '#8D5D1D' }}>See all</button>
-        </div>
-
-        {/* Work Samples */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <p className="text-[14px] font-bold text-[#1A1A1A] mb-4">Work Samples</p>
-          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-            {media.videos.slice(0, 6).map((v, idx) => (
-              <div key={v.id || idx} className="flex flex-col gap-1">
-                <div
-                  className="rounded-xl flex items-center justify-center overflow-hidden"
-                  style={{
-                    height: 100,
-                    background: v.thumbnail || v.cover_image
-                      ? `url(${v.thumbnail || v.cover_image}) center/cover no-repeat`
-                      : '#1A1A1A',
-                    position: 'relative',
-                  }}
-                >
-                  <div
-                    className="rounded-full flex items-center justify-center"
-                    style={{ width: 28, height: 28, background: 'rgba(255,0,0,0.85)' }}
-                  >
-                    <svg width="10" height="12" viewBox="0 0 10 12" fill="white">
-                      <polygon points="0,0 10,6 0,12" />
-                    </svg>
-                  </div>
-                </div>
-                <p className="text-[10px] font-medium" style={{ color: '#8D5D1D' }}>
-                  {v.caption || v.title || v.name || '—'}
-                </p>
-              </div>
-            ))}
-            {media.videos.length === 0 && (
-              <p className="text-[13px] text-[#AAAAAA] col-span-3 py-2">No work samples yet.</p>
-            )}
-          </div>
-        </div>
-      </div>
+     
     </div>
   );
 };
@@ -793,7 +865,7 @@ const AdminTab = ({ team }) => {
         {/* Personal Information */}
         <div className="bg-white rounded-2xl p-5 shadow-sm">
           <p className="text-[14px] font-bold text-[#1A1A1A] mb-4">Personal Information</p>
-          <div className="grid gap-x-6 gap-y-3 mb-4" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+          <div className="grid gap-x-6 gap-y-3 mb-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {[
               ['First Name', firstName],
               ['Last Name', lastName],
@@ -805,7 +877,7 @@ const AdminTab = ({ team }) => {
               </div>
             ))}
           </div>
-          <div className="grid gap-x-6 gap-y-3" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+          <div className="grid gap-x-6 gap-y-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {[
               ['Email', a.email || '—'],
               ['Phone', getAdminPhone(a)],
@@ -823,7 +895,7 @@ const AdminTab = ({ team }) => {
         {/* Address */}
         <div className="bg-white rounded-2xl p-5 shadow-sm">
           <p className="text-[14px] font-bold text-[#1A1A1A] mb-4">Address</p>
-          <div className="grid gap-x-6 gap-y-3" style={{ gridTemplateColumns: '1fr 1fr 1fr 1fr' }}>
+          <div className="grid gap-x-6 gap-y-3 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
             {[
               ['Home Address', getAdminAddress(a)],
               ['State', state],
@@ -989,6 +1061,18 @@ const OrgProfilePage = () => {
   const [media, setMedia]     = useState({ videos: [], images: [] });
   const [team, setTeam]       = useState([]);
 
+  const loadMedia = () => {
+    orgAPI.getMedia()
+      .then(r => {
+        const arr = Array.isArray(r.data?.data) ? r.data.data : [];
+        setMedia({
+          videos: arr.filter(m => m.media_type === 'video'),
+          images: arr.filter(m => m.media_type === 'photo' || m.media_type === 'image'),
+        });
+      })
+      .catch(() => {});
+  };
+
   useEffect(() => {
     authAPI.getMe()
       .then(r => {
@@ -1001,15 +1085,7 @@ const OrgProfilePage = () => {
         });
       })
       .catch(() => {});
-    orgAPI.getMedia()
-      .then(r => {
-        const d = r.data?.data || r.data || {};
-        setMedia({
-          videos: d.videos || d.video || (Array.isArray(d) ? d.filter(m => m.media_type === 'video') : []),
-          images: d.images || d.image || (Array.isArray(d) ? d.filter(m => m.media_type === 'image') : []),
-        });
-      })
-      .catch(() => {});
+    loadMedia();
     orgAPI.getTeam()
       .then(r => {
         const d = r.data?.data || r.data || [];
@@ -1019,6 +1095,20 @@ const OrgProfilePage = () => {
   }, []);
 
   const tabs = ['Overview', 'Media'];//, 'Admin'];
+
+  const reloadProfile = () => {
+    authAPI.getMe()
+      .then(r => {
+        const user = r.data?.data || {};
+        const p = user.profile || {};
+        setProfile({
+          ...p,
+          email: p.business_email || user.email || '',
+          address: p.business_address || p.location || '',
+        });
+      })
+      .catch(() => {});
+  };
 
   const openModal  = key => setOpenModalKey(key);
   const closeModal = ()  => setOpenModalKey(null);
@@ -1048,7 +1138,7 @@ const OrgProfilePage = () => {
             Organization Profile
           </h1>
           <button
-            onClick={() => navigate('/org/opportunities')}
+            onClick={() => navigate('/org/opportunities', { state: { openCreate: true } })}
             className="flex items-center gap-1.5 px-4 py-2 rounded-full text-white text-[13px] font-semibold"
             style={{ background: '#8D5D1D' }}
           >
@@ -1083,12 +1173,12 @@ const OrgProfilePage = () => {
       </div>
 
       {/* Modals */}
-      {openModalKey === 'editAbout'       && <EditAboutModal onClose={closeModal} />}
-      {openModalKey === 'editAddress'     && <EditAddressModal onClose={closeModal} />}
-      {openModalKey === 'editContact'     && <EditContactModal onClose={closeModal} />}
+      {openModalKey === 'editAbout'       && <EditAboutModal onClose={closeModal} profile={profile} onSaved={reloadProfile} />}
+      {openModalKey === 'editAddress'     && <EditAddressModal onClose={closeModal} profile={profile} onSaved={reloadProfile} />}
+      {openModalKey === 'editContact'     && <EditContactModal onClose={closeModal} profile={profile} onSaved={reloadProfile} />}
       {openModalKey === 'addRelevantWork' && <AddRelevantWorkModal onClose={closeModal} />}
-      {openModalKey === 'addVideo'        && <AddVideoModal onClose={closeModal} />}
-      {openModalKey === 'addImage'        && <AddImageModal onClose={closeModal} />}
+      {openModalKey === 'addVideo'        && <AddVideoModal onClose={closeModal} onSaved={loadMedia} />}
+      {openModalKey === 'addImage'        && <AddImageModal onClose={closeModal} onSaved={loadMedia} />}
     </DashboardLayout>
   );
 };

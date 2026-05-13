@@ -84,6 +84,7 @@ export const artistAPI = {
   deleteExperience: (pk) => api.delete(`/artist/onboarding/step5/experience/${pk}/`),
   completeOnboarding: () => api.post('/artist/onboarding/complete/'),
   getDisciplineOptions: (discipline) => api.get(`/artist/discipline-options/?discipline=${discipline}`),
+  updateProfile: (data) => api.patch('/artist/me/', data),
   getShareLink: () => api.get('/artist/portfolio/share/'),
   getPublicPortfolio: (token) => api.get(`/artist/portfolio/public/${token}/`),
 };
@@ -101,6 +102,7 @@ export const orgAPI = {
   uploadMedia: (data) => api.post('/organization/media/', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   deleteMedia: (pk) => api.delete(`/organization/media/${pk}/`),
   uploadLogo: (data) => api.patch('/organization/profile/', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  updateProfile: (data) => api.patch('/organization/me/', data),
   getTeam: () => api.get('/organization/team/'),
   inviteTeamMember: (data) => api.post('/organization/team/invite/', data),
   updateTeamMember: (pk, data) => api.patch(`/organization/team/${pk}/`, data),
@@ -146,7 +148,7 @@ export const applicationsAPI = {
   orgAllApplications: (params) => api.get('/applications/all/', { params }),
   orgAll: (params) => api.get('/applications/manage/', { params }),
   orgDetail: (pk) => api.get(`/applications/manage/${pk}/`),
-  orgByOpportunity: (oppPk, params) => api.get(`/applications/manage/opportunity/${oppPk}/`, { params }),
+  orgByOpportunity: (oppPk, params) => api.get(`applications/opportunity/${oppPk}/`, { params }),
   updateStatus: (pk, data) => api.patch(`/applications/${pk}/status/`, data),
 };
 
