@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, X, ArrowLeft, ChevronDown } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { opportunitiesAPI, applicationsAPI, artistAPI } from '@/services/index';
 import useAuthStore from '@/store/authStore';
@@ -160,8 +161,8 @@ const ViewOppModal = ({ opp: initialOpp, onClose, onApply }) => {
   );
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-[680px] max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center sm:p-4">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-[680px] max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-5 pb-0">
           <div className="flex items-center gap-2">
@@ -341,8 +342,8 @@ const ApplyModal = ({ opp, onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-[680px] max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center sm:p-4">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-[680px] max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center gap-3 p-5 pb-2">
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500">
@@ -411,8 +412,8 @@ const ApplyModal = ({ opp, onClose, onSuccess }) => {
    SUCCESS MODAL
 ──────────────────────────────────────────────────────────────────*/
 const SuccessModal = ({ onContinue }) => (
-  <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-    <div className="bg-white rounded-2xl shadow-xl w-full max-w-[480px] p-8 flex flex-col items-center text-center">
+  <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center sm:p-4">
+    <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-[480px] p-8 flex flex-col items-center text-center">
       <div className="bg-[#F7F4EE] rounded-2xl p-10 w-full flex flex-col items-center gap-4 mb-2">
         <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -486,6 +487,8 @@ const FilterSidebar = ({ filters, onChange }) => {
    MAIN PAGE
 ──────────────────────────────────────────────────────────────────*/
 const OpportunitiesPage = () => {
+  const location = useLocation();
+
   const [opps, setOpps]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal]   = useState(0);
@@ -501,8 +504,15 @@ const OpportunitiesPage = () => {
 
   /* Modals */
   const [viewOpp,    setViewOpp]    = useState(null);
-  const [applyOpp,   setApplyOpp]   = useState(null);
+  const [applyOpp,   setApplyOpp]   = useState(location.state?.applyOpp ?? null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  /* Clear router state so the modal doesn't re-open on back/forward navigation */
+  useEffect(() => {
+    if (location.state?.applyOpp) {
+      window.history.replaceState({}, '');
+    }
+  }, []);
 
   /* Load */
   const load = useCallback(() => {
