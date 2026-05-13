@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, X, ArrowLeft, ChevronDown } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { opportunitiesAPI, applicationsAPI, artistAPI } from '@/services/index';
 import useAuthStore from '@/store/authStore';
@@ -486,6 +487,8 @@ const FilterSidebar = ({ filters, onChange }) => {
    MAIN PAGE
 ──────────────────────────────────────────────────────────────────*/
 const OpportunitiesPage = () => {
+  const location = useLocation();
+
   const [opps, setOpps]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal]   = useState(0);
@@ -501,8 +504,15 @@ const OpportunitiesPage = () => {
 
   /* Modals */
   const [viewOpp,    setViewOpp]    = useState(null);
-  const [applyOpp,   setApplyOpp]   = useState(null);
+  const [applyOpp,   setApplyOpp]   = useState(location.state?.applyOpp ?? null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  /* Clear router state so the modal doesn't re-open on back/forward navigation */
+  useEffect(() => {
+    if (location.state?.applyOpp) {
+      window.history.replaceState({}, '');
+    }
+  }, []);
 
   /* Load */
   const load = useCallback(() => {

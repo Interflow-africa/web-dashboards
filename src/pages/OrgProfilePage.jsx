@@ -180,10 +180,24 @@ const Modal = ({ title, onClose, children }) => (
 );
 
 // ── Modal: Edit About ──────────────────────────────────────────────────────
-const EditAboutModal = ({ onClose }) => {
-  const [text, setText] = useState(
-    'Wild Dreams is a Lagos-based media and entertainment agency dedicated to amplifying African creative voices. We produce, curate, and distribute music, film, and visual art across the continent and beyond.'
-  );
+const EditAboutModal = ({ onClose, profile, onSaved }) => {
+  const [text, setText] = useState(profile?.description || '');
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await orgAPI.updateProfile({ description: text });
+      toast.success('About updated!');
+      onSaved?.();
+      onClose();
+    } catch {
+      toast.error('Failed to update about');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Modal title="Edit About Us" onClose={onClose}>
       <label className="block text-[12px] font-medium text-[#444] mb-1.5">About Us</label>
@@ -196,10 +210,12 @@ const EditAboutModal = ({ onClose }) => {
       />
       <div className="flex justify-end mt-4">
         <button
-          className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold"
+          onClick={handleSave}
+          disabled={saving}
+          className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold disabled:opacity-60"
           style={{ background: '#8D5D1D' }}
         >
-          Update
+          {saving ? 'Saving…' : 'Update'}
         </button>
       </div>
     </Modal>
@@ -207,9 +223,29 @@ const EditAboutModal = ({ onClose }) => {
 };
 
 // ── Modal: Edit Address ────────────────────────────────────────────────────
-const EditAddressModal = ({ onClose }) => {
-  const [form, setForm] = useState({ address: '14 Babs Animashaun Road, Surulere', city: 'Lagos', country: 'Nigeria' });
+const EditAddressModal = ({ onClose, profile, onSaved }) => {
+  const [form, setForm] = useState({
+    address: profile?.business_address || profile?.address || '',
+    city: profile?.city || '',
+    country: profile?.country || '',
+  });
+  const [saving, setSaving] = useState(false);
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await orgAPI.updateProfile({ business_address: form.address, city: form.city, country: form.country });
+      toast.success('Address updated!');
+      onSaved?.();
+      onClose();
+    } catch {
+      toast.error('Failed to update address');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Modal title="Edit Company Address" onClose={onClose}>
       <div className="flex flex-col gap-3">
@@ -221,31 +257,53 @@ const EditAddressModal = ({ onClose }) => {
         <div className="flex gap-3">
           <div className="flex-1">
             <label className="block text-[12px] font-medium text-[#444] mb-1">City</label>
-            <select value={form.city} onChange={set('city')}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30 bg-white">
-              {['Lagos', 'Abuja', 'Port Harcourt', 'Kano', 'Ibadan'].map(c => <option key={c}>{c}</option>)}
-            </select>
+            <input value={form.city} onChange={set('city')}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30" />
           </div>
           <div className="flex-1">
             <label className="block text-[12px] font-medium text-[#444] mb-1">Country</label>
-            <select value={form.country} onChange={set('country')}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30 bg-white">
-              {['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'Senegal'].map(c => <option key={c}>{c}</option>)}
-            </select>
+            <input value={form.country} onChange={set('country')}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:ring-2 focus:ring-[#8D5D1D]/30" />
           </div>
         </div>
       </div>
       <div className="flex justify-end mt-4">
-        <button className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold" style={{ background: '#8D5D1D' }}>Update</button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold disabled:opacity-60"
+          style={{ background: '#8D5D1D' }}
+        >
+          {saving ? 'Saving…' : 'Update'}
+        </button>
       </div>
     </Modal>
   );
 };
 
 // ── Modal: Edit Contact ────────────────────────────────────────────────────
-const EditContactModal = ({ onClose, profile }) => {
-  const [form, setForm] = useState({ phone: profile?.phone_number || '+234 803 000 1111', email: profile?.email || 'hello@wilddreams.ng' });
+const EditContactModal = ({ onClose, profile, onSaved }) => {
+  const [form, setForm] = useState({
+    phone: profile?.phone_number || '',
+    email: profile?.business_email || profile?.email || '',
+  });
+  const [saving, setSaving] = useState(false);
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await orgAPI.updateProfile({ phone_number: form.phone, business_email: form.email });
+      toast.success('Contact updated!');
+      onSaved?.();
+      onClose();
+    } catch {
+      toast.error('Failed to update contact');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Modal title="Edit Contact Information" onClose={onClose}>
       <div className="flex flex-col gap-3">
@@ -261,7 +319,14 @@ const EditContactModal = ({ onClose, profile }) => {
         </div>
       </div>
       <div className="flex justify-end mt-4">
-        <button className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold" style={{ background: '#8D5D1D' }}>Update</button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-5 py-2 rounded-xl text-white text-[13px] font-semibold disabled:opacity-60"
+          style={{ background: '#8D5D1D' }}
+        >
+          {saving ? 'Saving…' : 'Update'}
+        </button>
       </div>
     </Modal>
   );
@@ -1031,6 +1096,20 @@ const OrgProfilePage = () => {
 
   const tabs = ['Overview', 'Media'];//, 'Admin'];
 
+  const reloadProfile = () => {
+    authAPI.getMe()
+      .then(r => {
+        const user = r.data?.data || {};
+        const p = user.profile || {};
+        setProfile({
+          ...p,
+          email: p.business_email || user.email || '',
+          address: p.business_address || p.location || '',
+        });
+      })
+      .catch(() => {});
+  };
+
   const openModal  = key => setOpenModalKey(key);
   const closeModal = ()  => setOpenModalKey(null);
 
@@ -1094,9 +1173,9 @@ const OrgProfilePage = () => {
       </div>
 
       {/* Modals */}
-      {openModalKey === 'editAbout'       && <EditAboutModal onClose={closeModal} />}
-      {openModalKey === 'editAddress'     && <EditAddressModal onClose={closeModal} />}
-      {openModalKey === 'editContact'     && <EditContactModal onClose={closeModal} profile={profile} />}
+      {openModalKey === 'editAbout'       && <EditAboutModal onClose={closeModal} profile={profile} onSaved={reloadProfile} />}
+      {openModalKey === 'editAddress'     && <EditAddressModal onClose={closeModal} profile={profile} onSaved={reloadProfile} />}
+      {openModalKey === 'editContact'     && <EditContactModal onClose={closeModal} profile={profile} onSaved={reloadProfile} />}
       {openModalKey === 'addRelevantWork' && <AddRelevantWorkModal onClose={closeModal} />}
       {openModalKey === 'addVideo'        && <AddVideoModal onClose={closeModal} onSaved={loadMedia} />}
       {openModalKey === 'addImage'        && <AddImageModal onClose={closeModal} onSaved={loadMedia} />}

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, ExternalLink, Trash2, Plus, Image, Pencil, GraduationCap, Briefcase, Download } from 'lucide-react';
 import DashboardLayout from '../components/common/DashboardLayout';
-import { artistAPI, relevantWorksAPI, authAPI, settingsAPI } from '../services/api';
+import { artistAPI, relevantWorksAPI, authAPI } from '../services/api';
 import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
 
@@ -128,27 +128,78 @@ const WorkModal = ({ onClose, onSaved }) => {
   );
 };
 
+/* ── Detect media type from Cloudinary URL or file extension ─────── */
+const getMediaType = (url) => {
+  if (!url) return null;
+  if (/\/video\/upload\//i.test(url) || /\.(mp4|webm|mov|avi|ogg|mkv)(\?|$)/i.test(url)) return 'video';
+  if (/\/image\/upload\//i.test(url) || /\.(jpe?g|png|gif|webp|svg|bmp)(\?|$)/i.test(url)) return 'image';
+  if (/\.(pdf)(\?|$)/i.test(url)) return 'pdf';
+  return 'file';
+};
+
+const MEDIA_BADGE = {
+  video: { label: 'Video', bg: '#1e3a5f', text: 'white' },
+  image: { label: 'Image', bg: '#14532d', text: 'white' },
+  pdf:   { label: 'PDF',   bg: '#7f1d1d', text: 'white' },
+  file:  { label: 'File',  bg: '#374151', text: 'white' },
+};
+
 /* ── Work Card ───────────────────────────────────────────────────── */
 const WorkCard = ({ work, onDelete }) => {
-  const isImage = work.file && /\.(jpeg|png|gif|webp|svg)(\?|$)/i.test(work.file);
+  const fileUrl  = work.file_url || null;
+  const mediaType = getMediaType(fileUrl);
+  const badge     = mediaType ? MEDIA_BADGE[mediaType] : null;
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm flex flex-col">
-      {/* Thumbnail */}
+      {/* Preview */}
       <div className="bg-gray-50 h-[160px] flex items-center justify-center overflow-hidden relative">
-        {isImage ? (
-          <img src={work.file} alt={work.project_title} className="w-full h-full object-cover" />
-        ) : work.file ? (
+        {mediaType === 'image' && (
+          <img src={fileUrl} alt={work.project_title} className="w-full h-full object-cover" />
+        )}
+        {mediaType === 'video' && (
+          <video
+            src={fileUrl}
+            className="w-full h-full object-cover"
+            preload="metadata"
+            controls
+          />
+        )}
+        {mediaType === 'pdf' && (
           <div className="flex flex-col items-center gap-2 text-gray-400">
             <span className="text-4xl">📄</span>
-            <span className="text-[11px]">File attached</span>
+            <a href={fileUrl} target="_blank" rel="noopener noreferrer"
+              className="text-[11px] text-[#8D5D1D] font-medium hover:underline">
+              Open PDF
+            </a>
           </div>
-        ) : (
+        )}
+        {mediaType === 'file' && (
+          <div className="flex flex-col items-center gap-2 text-gray-400">
+            <span className="text-4xl">📎</span>
+            <a href={fileUrl} target="_blank" rel="noopener noreferrer"
+              className="text-[11px] text-[#8D5D1D] font-medium hover:underline">
+              View file
+            </a>
+          </div>
+        )}
+        {!mediaType && (
           <div className="flex flex-col items-center gap-2 text-gray-300">
             <Image size={32} />
             <span className="text-[11px]">No media</span>
           </div>
         )}
+
+        {/* Media type badge */}
+        {badge && (
+          <span
+            className="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full"
+            style={{ background: badge.bg, color: badge.text }}
+          >
+            {badge.label}
+          </span>
+        )}
+
         <button
           onClick={() => onDelete(work.id)}
           className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 text-red-500 hover:bg-red-50 flex items-center justify-center shadow-sm transition-colors"
@@ -447,7 +498,7 @@ export const PortfolioPage = () => {
   const saveBio = async () => {
     setSavingBio(true);
     try {
-      await settingsAPI.updateProfile({ bio: bioForm.bio, special_skills: bioForm.special_skills });
+      await artistAPI.updateProfile({ bio: bioForm.bio, special_skills: bioForm.special_skills });
       setProfile(p => ({ ...p, bio: bioForm.bio, special_skills: bioForm.special_skills }));
       setIsEditingBio(false);
       toast.success('Bio updated!');
