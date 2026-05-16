@@ -5,68 +5,60 @@ import DashboardLayout from '@/components/common/DashboardLayout';
 import { dashboardAPI, connectionsAPI } from '@/services/api';
 import useAuthStore from '@/store/authStore';
 
+const BG_COLORS = ['#3B82F6','#10B981','#F59E0B','#8B5CF6','#EF4444','#06B6D4'];
+
 /* ── Stat card ── */
 const StatCard = ({ title, value, sub, icon: Icon, bgColor, iconBg }) => (
-  <div className="rounded-2xl p-5 flex flex-col gap-3" style={{ background: bgColor }}>
-    <p className="text-[13px] font-semibold text-[#444] leading-tight">{title}</p>
-    <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: iconBg }}>
-      <Icon size={22} strokeWidth={1.6} className="text-white" />
+  <div className="rounded-2xl p-3 sm:p-5 flex flex-col gap-2 sm:gap-3" style={{ background: bgColor }}>
+    <div className="flex items-start justify-between gap-1">
+      <p className="text-[11px] sm:text-[13px] font-semibold text-[#444] leading-tight flex-1 min-w-0">{title}</p>
+      <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-full flex items-center justify-center shrink-0" style={{ background: iconBg }}>
+        <Icon size={14} strokeWidth={1.8} className="text-white sm:hidden" />
+        <Icon size={20} strokeWidth={1.6} className="text-white hidden sm:block" />
+      </div>
     </div>
-    <p className="text-[38px] font-black text-[#1A1A1A] leading-none">{value}</p>
-    {sub && <p className="text-[12px] text-[#888]">{sub}</p>}
+    <p className="text-[24px] sm:text-[38px] font-black text-[#1A1A1A] leading-none">{value}</p>
+    {sub && <p className="text-[10px] sm:text-[12px] text-[#888] leading-snug hidden sm:block">{sub}</p>}
   </div>
 );
 
-/* ── Opportunity card ── */
+/* ── Opportunity card (desktop horizontal scroll) ── */
 const OppCard = ({ opp }) => {
   const navigate = useNavigate();
-  const initials  = opp.organization_name?.slice(0, 3).toUpperCase() || 'ORG';
-  const BG_COLORS = ['#3B82F6','#10B981','#F59E0B','#8B5CF6','#EF4444','#06B6D4'];
-  const color     = BG_COLORS[(opp.id || 0) % BG_COLORS.length] || '#3B82F6';
+  const initials = opp.organization_name?.slice(0, 3).toUpperCase() || 'ORG';
+  const color    = BG_COLORS[(opp.id || 0) % BG_COLORS.length] || '#3B82F6';
 
   return (
     <div className="bg-white rounded-2xl border border-[#EBEBEB] p-5 min-w-[240px] max-w-[260px] shrink-0 hover:shadow-md transition-shadow">
       <div className="flex items-center gap-3 mb-3">
         {opp.organization_logo
           ? <img src={opp.organization_logo} alt={initials} className="w-10 h-10 rounded-full object-cover" />
-          : (
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[11px] font-bold" style={{ background: color }}>
-              {initials}
-            </div>
-          )
+          : <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[11px] font-bold" style={{ background: color }}>{initials}</div>
         }
-        <div>
-          <p className="text-[13.5px] font-bold text-[#1A1A1A] leading-tight">{opp.organization_name}</p>
-          <p className="text-[11.5px] text-[#888]">{opp.location || opp.city}</p>
+        <div className="min-w-0">
+          <p className="text-[13px] font-bold text-[#1A1A1A] leading-tight truncate">{opp.organization_name}</p>
+          <p className="text-[11px] text-[#888] truncate">{opp.location || opp.city}</p>
         </div>
       </div>
-
-      <p className="text-[13px] font-semibold text-[#1A1A1A] mb-1">{opp.title}</p>
-      <p className="text-[11.5px] text-[#888] mb-2">{opp.sub_title || opp.subtitle}</p>
-      <p className="text-[11px] text-[#AAAAAA] mb-3">
+      <p className="text-[13px] font-semibold text-[#1A1A1A] mb-1 truncate">{opp.title}</p>
+      <p className="text-[11px] text-[#888] mb-2 truncate">{opp.sub_title || opp.subtitle}</p>
+      <p className="text-[11px] text-[#AAAAAA] mb-3 line-clamp-2">
         {opp.posted_ago ? `Posted ${opp.posted_ago} ago · ` : ''}
         {opp.deadline ? `Deadline ${opp.deadline} · ` : ''}
         {opp.type || opp.opportunity_type || ''}
       </p>
-      <p className="text-[12px] text-[#666] mb-3 line-clamp-2 leading-relaxed">{opp.description}</p>
-
       <div className="flex flex-wrap gap-1.5 mb-4">
         {(opp.tags || opp.disciplines || []).slice(0, 2).map((t, i) => (
           <span key={i} className="text-[11px] px-2.5 py-0.5 bg-[#F5EDD6] text-[#8B6914] rounded-full">{t}</span>
         ))}
       </div>
-
       <div className="flex gap-2">
-        <button
-          onClick={() => navigate('/opportunities')}
-          className="flex-1 py-2 rounded-full border border-[#1A1A1A] text-[12.5px] font-semibold text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white transition-colors"
-        >
+        <button onClick={() => navigate('/opportunities')}
+          className="flex-1 py-2 rounded-full border border-[#1A1A1A] text-[12px] font-semibold text-[#1A1A1A] hover:bg-[#1A1A1A] hover:text-white transition-colors">
           More Info
         </button>
-        <button
-          onClick={() => navigate('/opportunities', { state: { applyOpp: opp } })}
-          className="flex-1 py-2 rounded-full bg-[#8B6914] text-white text-[12.5px] font-semibold hover:bg-[#7A5C12] transition-colors"
-        >
+        <button onClick={() => navigate('/opportunities', { state: { applyOpp: opp } })}
+          className="flex-1 py-2 rounded-full bg-[#8B6914] text-white text-[12px] font-semibold hover:bg-[#7A5C12] transition-colors">
           Apply
         </button>
       </div>
@@ -74,34 +66,58 @@ const OppCard = ({ opp }) => {
   );
 };
 
+/* ── Opportunity card (mobile — horizontal compact row) ── */
+const OppCardMobile = ({ opp }) => {
+  const navigate = useNavigate();
+  const initials = opp.organization_name?.slice(0, 3).toUpperCase() || 'ORG';
+  const color    = BG_COLORS[(opp.id || 0) % BG_COLORS.length] || '#3B82F6';
+
+  return (
+    <div className="bg-white rounded-2xl border border-[#EBEBEB] p-3.5 flex items-center gap-3 hover:shadow-sm transition-shadow">
+      {opp.organization_logo
+        ? <img src={opp.organization_logo} alt={initials} className="w-11 h-11 rounded-full object-cover shrink-0" />
+        : <div className="w-11 h-11 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0" style={{ background: color }}>{initials}</div>
+      }
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-bold text-[#1A1A1A] truncate">{opp.organization_name}</p>
+        <p className="text-[12px] font-medium text-[#444] truncate">{opp.title}</p>
+        <p className="text-[11px] text-[#888] truncate">{opp.location || opp.city}</p>
+      </div>
+      <button
+        onClick={() => navigate('/opportunities', { state: { applyOpp: opp } })}
+        className="shrink-0 px-3 py-1.5 rounded-full bg-[#8B6914] text-white text-[11.5px] font-semibold hover:bg-[#7A5C12] transition-colors">
+        Apply
+      </button>
+    </div>
+  );
+};
+
 /* ── Activity row ── */
 const ActivityRow = ({ item }) => (
-  <div className="flex items-center gap-4 py-3 border-b border-[#F0F0F0] last:border-0">
+  <div className="flex items-center gap-3 py-3 border-b border-[#F0F0F0] last:border-0">
     <div className="w-9 h-9 rounded-full bg-[#EFF6FF] flex items-center justify-center shrink-0">
       <Upload size={16} className="text-[#3B82F6]" />
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-[13.5px] font-semibold text-[#1A1A1A] truncate">
+      <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">
         {item.title || item.description || item.activity_type || '—'}
       </p>
       {(item.file_type || item.details || item.subtitle) && (
-        <p className="text-[12px] text-[#888]">
+        <p className="text-[11.5px] text-[#888] truncate">
           {item.file_type
-            ? `File Type: ${item.file_type} · File Location: ${item.location} · File size: ${item.size}`
+            ? `${item.file_type} · ${item.size || ''}`
             : (item.details || item.subtitle || '')}
         </p>
       )}
     </div>
-    <p className="text-[12px] text-[#AAAAAA] shrink-0 ml-2">
-      {item.date || item.created_at || ''}
-    </p>
+    <p className="text-[11px] text-[#AAAAAA] shrink-0">{item.date || ''}</p>
   </div>
 );
 
 /* ── Connection suggestion ── */
 const ConnectionCard = ({ person, onConnect, connecting }) => {
-  const name = person.name || `${person.first_name || ''} ${person.last_name || ''}`.trim() || '—';
-  const role = person.role || person.discipline || person.bio || '';
+  const name   = person.name || `${person.first_name || ''} ${person.last_name || ''}`.trim() || '—';
+  const role   = person.role || person.discipline || person.bio || '';
   const avatar = person.avatar || person.profile_picture || person.img || '';
 
   return (
@@ -116,15 +132,14 @@ const ConnectionCard = ({ person, onConnect, connecting }) => {
         }
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[13.5px] font-semibold text-[#1A1A1A] leading-tight">{name}</p>
-        <p className="text-[12px] text-[#888] truncate">{role}</p>
+        <p className="text-[13px] font-semibold text-[#1A1A1A] leading-tight truncate">{name}</p>
+        <p className="text-[11.5px] text-[#888] truncate">{role}</p>
       </div>
       <button
         onClick={() => onConnect(person.id)}
         disabled={connecting}
-        className="bg-[#8B6914] text-white text-[12px] font-semibold px-4 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-[#7A5C12] transition-colors shrink-0 disabled:opacity-60"
-      >
-        {connecting ? 'Sending…' : 'Connect'} {!connecting && <ArrowRight size={12} />}
+        className="bg-[#8B6914] text-white text-[11.5px] font-semibold px-3 py-1.5 rounded-full flex items-center gap-1 hover:bg-[#7A5C12] transition-colors shrink-0 disabled:opacity-60">
+        {connecting ? '…' : 'Connect'} {!connecting && <ArrowRight size={11} />}
       </button>
     </div>
   );
@@ -136,15 +151,11 @@ const Donut = ({ pct = 0 }) => {
   const circ = 2 * Math.PI * r;
   const dash = circ * (Math.min(pct, 100) / 100);
   return (
-    <svg width={96} height={96} viewBox="0 0 96 96">
+    <svg width={80} height={80} viewBox="0 0 96 96" className="shrink-0">
       <circle cx={cx} cy={cy} r={r} fill="none" stroke="#EBEBEB" strokeWidth="8" />
-      <circle
-        cx={cx} cy={cy} r={r} fill="none"
-        stroke="#3B82F6" strokeWidth="8"
-        strokeDasharray={`${dash} ${circ}`}
-        strokeLinecap="round"
-        transform={`rotate(-90 ${cx} ${cy})`}
-      />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#3B82F6" strokeWidth="8"
+        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+        transform={`rotate(-90 ${cx} ${cy})`} />
       <text x={cx} y={cy + 6} textAnchor="middle" fontSize="16" fontWeight="800" fill="#1A1A1A">{pct}%</text>
     </svg>
   );
@@ -170,7 +181,6 @@ const ArtistDashboard = () => {
   const fullName  = user?.profile.full_name ? `${user.profile.full_name || user.profile.first_name}`.trim() : firstName;
 
   useEffect(() => {
-    // Fire all dashboard requests in parallel
     Promise.allSettled([
       dashboardAPI.artistConnectionsCount(),
       dashboardAPI.artistPortfolioViewers({ days: 10 }),
@@ -181,37 +191,27 @@ const ArtistDashboard = () => {
       dashboardAPI.artistRecentActivity(),
       dashboardAPI.artistUpdates(),
     ]).then(([conns, viewers, apps, progress, oppsRes, closeConns, recentAct, updatesRes]) => {
-      const get = (res) => (res.status === 'fulfilled' ? (res.value.data?.data || res.value.data || {}) : {});
-      const getCount = (res) => {
-        const d = get(res);
-        return d.count ?? d.total ?? d.value ?? 0;
-      };
+      const get      = (res) => (res.status === 'fulfilled' ? (res.value.data?.data || res.value.data || {}) : {});
+      const getCount = (res) => { const d = get(res); return d.count ?? d.total ?? d.value ?? 0; };
 
       setStats({
         connections:  getCount(conns),
         viewers:      getCount(viewers),
         applications: getCount(apps),
-        progress:     (() => {
-          const d = get(progress);
-          return d.percentage ?? d.progress ?? d.completion_percentage ?? 0;
-        })(),
+        progress:     (() => { const d = get(progress); return d.percentage ?? d.progress ?? d.completion_percentage ?? 0; })(),
       });
-
       if (oppsRes.status === 'fulfilled') {
         const d = oppsRes.value.data?.data || oppsRes.value.data || {};
         setOpps(Array.isArray(d) ? d : (d.results || []));
       }
-
       if (closeConns.status === 'fulfilled') {
         const d = closeConns.value.data?.data || closeConns.value.data || {};
         setConnections(Array.isArray(d) ? d : (d.results || []));
       }
-
       if (recentAct.status === 'fulfilled') {
         const d = recentAct.value.data?.data || recentAct.value.data || {};
         setActivity(Array.isArray(d) ? d : (d.results || []));
       }
-
       if (updatesRes.status === 'fulfilled') {
         const d = updatesRes.value.data?.data || updatesRes.value.data || {};
         setUpdates(Array.isArray(d) ? d : (d.results || []));
@@ -222,16 +222,14 @@ const ArtistDashboard = () => {
   const handleConnect = (recipientId) => {
     setConnectingId(recipientId);
     connectionsAPI.send({ recipient: recipientId })
-      .then(() => {
-        setConnections(prev => prev.filter(c => c.id !== recipientId));
-      })
+      .then(() => setConnections(prev => prev.filter(c => c.id !== recipientId)))
       .catch(() => {})
       .finally(() => setConnectingId(null));
   };
 
   const STAT_CARDS = [
     { title: 'My Connections',    value: stats.connections,  icon: Users,    bgColor: '#DBEAFE', iconBg: '#3B82F6' },
-    { title: 'Portfolio Viewers', value: stats.viewers,      icon: Eye,      bgColor: '#D1FAE5', iconBg: '#10B981', sub: 'In the last 10 days' },
+    { title: 'Portfolio Viewers', value: stats.viewers,      icon: Eye,      bgColor: '#D1FAE5', iconBg: '#10B981', sub: 'Last 10 days' },
     { title: 'My Applications',   value: stats.applications, icon: Briefcase,bgColor: '#FEF3C7', iconBg: '#F59E0B' },
   ];
 
@@ -240,30 +238,51 @@ const ArtistDashboard = () => {
   return (
     <DashboardLayout>
       {/* Header */}
-      <div className="mb-7">
-        <h1 className="text-[24px] font-bold text-[#1A1A1A]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+      <div className="mb-5 sm:mb-7">
+        <h1 className="text-[22px] sm:text-[24px] font-bold text-[#1A1A1A]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
           Welcome back, {firstName}!
         </h1>
-        <p className="text-[13.5px] text-[#888] mt-0.5">Pick up from where you left off with Interflow</p>
+        <p className="text-[13px] text-[#888] mt-0.5">Pick up from where you left off with Interflow</p>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {STAT_CARDS.map(c => <StatCard key={c.title} {...c} />)}
+      {/* ── MOBILE stat layout (hidden on lg+) ── */}
+      <div className="lg:hidden">
+        {/* 3 stat cards side by side */}
+        <div className="grid grid-cols-3 gap-2.5 mb-3">
+          {STAT_CARDS.map(c => <StatCard key={c.title} {...c} />)}
+        </div>
 
-        {/* Profile completion */}
+        {/* Profile completion — horizontal strip */}
+        <div
+          className="bg-white rounded-2xl border border-[#EBEBEB] p-3 flex items-center gap-3 mb-5 cursor-pointer hover:bg-[#FAFAFA] transition-colors"
+          onClick={() => navigate('/portfolio')}
+        >
+          <Donut pct={stats.progress} />
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold text-[#444] truncate">{fullName}</p>
+            <p className="text-[11px] text-[#888] mt-0.5">{stats.progress}% portfolio complete</p>
+            <div className="flex items-center gap-1.5 mt-2">
+              <Briefcase size={12} className="text-[#F59E0B] shrink-0" />
+              <p className="text-[11.5px] font-semibold text-[#1A1A1A]">Edit your portfolio</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── DESKTOP stat layout (hidden below lg) ── */}
+      <div className="hidden lg:grid lg:grid-cols-4 gap-4 mb-8">
+        {STAT_CARDS.map(c => <StatCard key={c.title} {...c} />)}
+        {/* Profile card */}
         <div className="bg-white rounded-2xl border border-[#EBEBEB] p-5 flex flex-col items-center justify-center gap-2">
           <p className="text-[13px] font-semibold text-[#444]">{fullName}</p>
           <Donut pct={stats.progress} />
-          <div
-            className="w-full bg-[#F5F5F5] rounded-xl p-3 flex items-center gap-3 mt-1 cursor-pointer hover:bg-[#EBEBEB] transition-colors"
-            onClick={() => navigate('/portfolio')}
-          >
-            <div className="w-8 h-8 rounded-lg bg-[#FEF3C7] flex items-center justify-center">
+          <div className="w-full bg-[#F5F5F5] rounded-xl p-3 flex items-center gap-3 mt-1 cursor-pointer hover:bg-[#EBEBEB] transition-colors"
+            onClick={() => navigate('/portfolio')}>
+            <div className="w-8 h-8 rounded-lg bg-[#FEF3C7] flex items-center justify-center shrink-0">
               <Briefcase size={15} className="text-[#F59E0B]" />
             </div>
-            <div>
-              <p className="text-[11px] text-[#888] leading-tight">Portfolio progress: Not completed ({stats.progress}%)</p>
+            <div className="min-w-0">
+              <p className="text-[11px] text-[#888] leading-tight truncate">Portfolio: {stats.progress}% complete</p>
               <p className="text-[11.5px] font-semibold text-[#1A1A1A]">Edit your portfolio</p>
             </div>
           </div>
@@ -271,67 +290,71 @@ const ArtistDashboard = () => {
       </div>
 
       {/* Opportunities + right sidebar */}
-      <div className="flex flex-col xl:flex-row gap-6">
+      <div className="flex flex-col xl:flex-row gap-5">
         {/* Left main */}
-        <div className="flex-1 min-w-0 space-y-5">
+        <div className="flex-1 min-w-0 space-y-4 sm:space-y-5">
 
           {/* Opportunities for you */}
-          <div className="bg-white rounded-2xl border border-[#EBEBEB] p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-[16px] font-bold text-[#1A1A1A]">Opportunities for you</h3>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setOppPage(p => Math.max(0, p - 1))}
-                  className="w-7 h-7 rounded-full border border-[#E0E0E0] flex items-center justify-center hover:bg-[#F5F5F5] transition-colors"
-                >
+          <div className="bg-white rounded-2xl border border-[#EBEBEB] p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4 gap-2">
+              <h3 className="text-[14px] sm:text-[16px] font-bold text-[#1A1A1A] truncate">Opportunities for you</h3>
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <button onClick={() => setOppPage(p => Math.max(0, p - 1))}
+                  className="w-7 h-7 rounded-full border border-[#E0E0E0] flex items-center justify-center hover:bg-[#F5F5F5] transition-colors">
                   <ChevronLeft size={14} />
                 </button>
-                <button
-                  onClick={() => setOppPage(p => p + 1)}
+                <button onClick={() => setOppPage(p => p + 1)}
                   disabled={oppPage * 4 + 4 >= opps.length && opps.length > 0}
-                  className="w-7 h-7 rounded-full border border-[#E0E0E0] flex items-center justify-center hover:bg-[#F5F5F5] transition-colors disabled:opacity-40"
-                >
+                  className="w-7 h-7 rounded-full border border-[#E0E0E0] flex items-center justify-center hover:bg-[#F5F5F5] transition-colors disabled:opacity-40">
                   <ChevronRight size={14} />
                 </button>
-                <button onClick={() => navigate('/opportunities')} className="text-[12.5px] font-semibold text-[#8B6914] hover:underline ml-1">
+                <button onClick={() => navigate('/opportunities')}
+                  className="text-[12px] font-semibold text-[#8B6914] hover:underline">
                   See all
                 </button>
               </div>
             </div>
-            <div className="flex gap-4 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+
+            {/* Mobile: vertical list */}
+            <div className="sm:hidden flex flex-col gap-3">
+              {visibleOpps.length > 0
+                ? visibleOpps.slice(0, 3).map(o => <OppCardMobile key={o.id} opp={o} />)
+                : [1, 2].map(i => <div key={i} className="bg-[#F9F9F9] rounded-xl h-[72px] animate-pulse" />)
+              }
+            </div>
+
+            {/* sm+: horizontal scroll */}
+            <div className="hidden sm:flex gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
               {visibleOpps.length > 0
                 ? visibleOpps.map(o => <OppCard key={o.id} opp={o} />)
                 : [1, 2, 3, 4].map(i => (
-                    <div key={i} className="bg-[#F9F9F9] rounded-2xl min-w-[240px] h-[280px] animate-pulse" />
+                    <div key={i} className="bg-[#F9F9F9] rounded-2xl min-w-[240px] h-[280px] animate-pulse shrink-0" />
                   ))
               }
             </div>
           </div>
 
           {/* Updates / Industry news */}
-          <div className="bg-white rounded-2xl border border-[#EBEBEB] p-6">
-            <div className="flex items-center gap-6 border-b border-[#F0F0F0] mb-5">
+          <div className="bg-white rounded-2xl border border-[#EBEBEB] p-4 sm:p-6">
+            <div className="flex items-center gap-4 sm:gap-6 border-b border-[#F0F0F0] mb-4">
               {['updates', 'news'].map(t => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={`pb-3 text-[13.5px] font-semibold capitalize transition-colors ${
+                <button key={t} onClick={() => setTab(t)}
+                  className={`pb-3 text-[12.5px] sm:text-[13.5px] font-semibold transition-colors whitespace-nowrap ${
                     tab === t ? 'text-[#1A1A1A] border-b-2 border-[#8B6914]' : 'text-[#AAAAAA]'
-                  }`}
-                >
-                  {t === 'updates' ? 'Updates for you' : 'Latest Industry news'}
+                  }`}>
+                  {t === 'updates' ? 'Updates' : 'Industry news'}
                 </button>
               ))}
             </div>
             {tab === 'updates' && updates.length > 0
               ? updates.map((u, i) => (
                   <div key={i} className="py-3 border-b border-[#F0F0F0] last:border-0">
-                    <p className="text-[13.5px] font-semibold text-[#1A1A1A]">{u.title || u.message}</p>
+                    <p className="text-[13px] font-semibold text-[#1A1A1A]">{u.title || u.message}</p>
                     {u.body && <p className="text-[12px] text-[#888] mt-0.5">{u.body}</p>}
                   </div>
                 ))
               : (
-                  <div className="text-center py-10 text-[#BBBBBB] text-[13.5px]">
+                  <div className="text-center py-10 text-[#BBBBBB] text-[13px]">
                     You currently do not have any update at the moment.
                   </div>
                 )
@@ -339,45 +362,30 @@ const ArtistDashboard = () => {
           </div>
 
           {/* Recent activity */}
-          <div className="bg-white rounded-2xl border border-[#EBEBEB] p-6">
-            <h3 className="text-[15px] font-bold text-[#1A1A1A] mb-4">Your Recent Activity</h3>
+          <div className="bg-white rounded-2xl border border-[#EBEBEB] p-4 sm:p-6">
+            <h3 className="text-[14px] sm:text-[15px] font-bold text-[#1A1A1A] mb-4">Your Recent Activity</h3>
             {activity.length > 0
               ? activity.map((a, i) => <ActivityRow key={i} item={a} />)
-              : (
-                  <div className="text-center py-8 text-[#BBBBBB] text-[13px]">
-                    No recent activity yet.
-                  </div>
-                )
+              : <div className="text-center py-8 text-[#BBBBBB] text-[13px]">No recent activity yet.</div>
             }
           </div>
         </div>
 
         {/* Right sidebar */}
         <div className="w-full xl:w-[260px] xl:shrink-0">
-          <div className="bg-white rounded-2xl border border-[#EBEBEB] p-5">
+          <div className="bg-white rounded-2xl border border-[#EBEBEB] p-4 sm:p-5">
             <div className="flex items-center gap-2 mb-4">
-              <Eye size={15} className="text-[#8B6914]" />
-              <h3 className="text-[14px] font-bold text-[#1A1A1A]">Connections close to you</h3>
+              <Eye size={14} className="text-[#8B6914] shrink-0" />
+              <h3 className="text-[13.5px] font-bold text-[#1A1A1A] truncate">Connections close to you</h3>
             </div>
             {connections.length > 0
               ? connections.map(c => (
-                  <ConnectionCard
-                    key={c.id}
-                    person={c}
-                    onConnect={handleConnect}
-                    connecting={connectingId === c.id}
-                  />
+                  <ConnectionCard key={c.id} person={c} onConnect={handleConnect} connecting={connectingId === c.id} />
                 ))
-              : (
-                  <div className="text-center py-6 text-[#BBBBBB] text-[12.5px]">
-                    No suggestions right now.
-                  </div>
-                )
+              : <div className="text-center py-6 text-[#BBBBBB] text-[12.5px]">No suggestions right now.</div>
             }
-            <button
-              onClick={() => navigate('/network')}
-              className="text-[12.5px] font-semibold text-[#8B6914] hover:underline mt-3 w-full text-right block"
-            >
+            <button onClick={() => navigate('/network')}
+              className="text-[12px] font-semibold text-[#8B6914] hover:underline mt-3 w-full text-right block">
               See all
             </button>
           </div>

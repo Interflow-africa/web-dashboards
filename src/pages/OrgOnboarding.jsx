@@ -30,10 +30,31 @@ const SIDEBAR_STEPS = [
   { num: 4, label: 'Verification Status' },
 ];
 
+/* ─── Mobile step progress bar (shown instead of sidebar on small screens) ── */
+const MobileStepBar = ({ activeStep }) => (
+  <div className="lg:hidden flex items-center gap-3 px-5 py-3 shrink-0" style={{ background: '#0D0D0D' }}>
+    <span className="text-white/60 text-[11px] font-medium whitespace-nowrap">
+      Step {Math.min(activeStep, 4)} of 4
+    </span>
+    <div className="flex gap-1.5 flex-1">
+      {[1, 2, 3, 4].map(n => (
+        <div
+          key={n}
+          className="h-1.5 flex-1 rounded-full transition-colors"
+          style={{ background: n <= Math.min(activeStep, 4) ? '#8D5D1D' : 'rgba(255,255,255,0.15)' }}
+        />
+      ))}
+    </div>
+    <span className="text-white text-[11px] font-semibold whitespace-nowrap">
+      {SIDEBAR_STEPS[Math.min(activeStep, 4) - 1]?.label}
+    </span>
+  </div>
+);
+
 /* ─── Sidebar ───────────────────────────────────────────────────────── */
 const Sidebar = ({ activeStep }) => (
   <aside
-    className="w-[230px] shrink-0 flex flex-col pt-8 pb-10 px-7"
+    className="hidden lg:flex w-[230px] shrink-0 flex-col pt-8 pb-10 px-7"
     style={{ background: '#0D0D0D', minHeight: '100%' }}
   >
     {/* Logo */}
@@ -633,15 +654,16 @@ const OrgOnboarding = () => {
       </header>
 
       {/* ── Body: sidebar + content ── */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 flex-col lg:flex-row">
+        <MobileStepBar activeStep={sidebarActive} />
         <Sidebar activeStep={sidebarActive} />
 
         {/* ── Content area ── */}
-        <main className="flex-1 overflow-y-auto py-12 px-8 relative">
+        <main className="flex-1 overflow-y-auto py-6 sm:py-10 lg:py-12 px-4 sm:px-6 lg:px-8 relative">
           <RingDecoration />
 
           <div
-            className="relative mx-auto rounded-2xl shadow-md p-10 bg-white overflow-hidden"
+            className="relative mx-auto rounded-2xl shadow-md p-5 sm:p-8 lg:p-10 bg-white overflow-hidden"
             style={{ maxWidth: 640 }}
           >
             {step === 1 && <Step1 onNext={next} />}

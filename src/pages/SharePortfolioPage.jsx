@@ -43,36 +43,34 @@ const SharePortfolioPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="dash-page-header">
-        <div>
-          <h1 className="dash-page-title">Share Portfolio</h1>
-          <p className="dash-page-sub">Share your Interflow portfolio with the world</p>
+      <div style={{ maxWidth: '640px', width: '100%', overflow: 'hidden' }}>
+        <div style={{ marginBottom: '24px' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(20px, 6vw, 28px)', fontWeight: '700', color: 'var(--dark)', marginBottom: '4px', lineHeight: 1.2 }}>Share Portfolio</h1>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Share your Interflow portfolio with the world</p>
         </div>
-      </div>
 
-      <div style={{ maxWidth: '640px' }}>
         {/* Main share card */}
-        <div className="section-card" style={{ padding: '36px', marginBottom: '20px', textAlign: 'center' }}>
+        <div className="section-card" style={{ padding: 'clamp(20px, 5vw, 36px)', marginBottom: '20px', textAlign: 'center', overflow: 'visible' }}>
           <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--gold-pale)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px', margin: '0 auto 20px' }}>🔗</div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: '700', color: 'var(--dark)', marginBottom: '12px' }}>Your Portfolio is Ready to Share</h2>
-          <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.7', marginBottom: '28px', maxWidth: '420px', margin: '0 auto 28px' }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(20px, 5vw, 26px)', fontWeight: '700', color: 'var(--dark)', marginBottom: '12px', wordBreak: 'break-word' }}>Your Portfolio is Ready to Share</h2>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.7', maxWidth: '420px', margin: '0 auto 28px' }}>
             Anyone with this link can view your public portfolio — no Interflow account needed. Perfect for auditions, job applications, and networking.
           </p>
 
           {loading ? (
             <div className="skeleton" style={{ height: '52px', borderRadius: 'var(--radius-full)', maxWidth: '400px', margin: '0 auto' }} />
           ) : shareUrl ? (
-            <div style={{ display: 'flex', gap: '0', maxWidth: '480px', margin: '0 auto 24px', border: '2px solid var(--gold)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
-              <div style={{ flex: 1, padding: '13px 20px', fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'var(--gold-pale)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', width: '100%', marginBottom: '24px', border: '2px solid var(--gold)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
+              <div style={{ padding: '13px 16px', fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: 'var(--gold-pale)' }}>
                 {shareUrl}
               </div>
               <button
                 onClick={handleCopy}
-                style={{ padding: '13px 24px', background: 'var(--gold)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', transition: 'background var(--transition)' }}
+                style={{ padding: '13px 20px', background: 'var(--gold)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'var(--font-body)', whiteSpace: 'nowrap', transition: 'background var(--transition)' }}
                 onMouseEnter={e => e.currentTarget.style.background = 'var(--gold-light)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'var(--gold)'}
               >
-                {copied ? '✓ Copied!' : 'Copy Link'}
+                {copied ? '✓ Copied!' : 'Copy'}
               </button>
             </div>
           ) : (

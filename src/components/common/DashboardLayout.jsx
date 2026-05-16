@@ -126,7 +126,7 @@ const DashboardLayout = ({ children }) => {
   );
 
   return (
-    <div className="min-h-screen flex bg-[#F4F4F2]">
+    <div className="min-h-screen flex bg-[#F4F4F2] overflow-x-hidden">
 
       {/* ── Desktop sidebar (lg+) ── */}
       <aside className="hidden lg:flex w-[220px] shrink-0 bg-[#0D0D0D] flex-col fixed left-0 top-0 h-screen z-30">
@@ -215,7 +215,7 @@ const DashboardLayout = ({ children }) => {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 md:p-6 lg:p-7 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-6 lg:p-7" style={{ overflowX: 'clip' }}>
           {children}
         </main>
       </div>

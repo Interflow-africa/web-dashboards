@@ -419,16 +419,7 @@ const RegisterForm = ({ role, onSuccess }) => {
           <ContinueBtn type="submit" loading={isSubmitting} fullWidth />
         </form>
 
-        <div className="or-divider my-6">OR</div>
-
-        <div className="space-y-3">
-          <button className="social-btn">
-            <GoogleIcon /> Sign up with Google
-          </button>
-          <button className="social-btn">
-            <AppleIcon /> Sign up with Apple
-          </button>
-        </div>
+     
       </div>
     </AuthSplitLayout>
   );

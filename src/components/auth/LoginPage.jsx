@@ -135,18 +135,6 @@ const LoginPage = () => {
           Forgot your Password?
         </Link>
 
-        {/* OR divider */}
-        <div className="or-divider my-6">OR</div>
-
-        {/* Social buttons */}
-        <div className="space-y-3">
-          <button className="social-btn">
-            <GoogleIcon /> Continue with Google
-          </button>
-          <button className="social-btn">
-            <AppleIcon /> Continue with Apple
-          </button>
-        </div>
 
       </div>
     </AuthSplitLayout>
