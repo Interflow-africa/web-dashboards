@@ -475,17 +475,17 @@ const Step1 = ({ onNext }) => {
    STEP 2 — Proficiency Scale (discipline-aware)
    ════════════════════════════════════════════════════════════════ */
 const RatingRow = ({ skill, value, onChange }) => (
-  <div className="flex items-center gap-6">
-    <div className="w-[160px] bg-[#F0EDE6] rounded-full px-4 py-2 text-[13px] font-medium text-[#5C4A1E] text-center shrink-0">
+  <div className="flex items-center gap-2 sm:gap-6">
+    <div className="flex-1 min-w-0 bg-[#F0EDE6] rounded-full px-3 py-2 text-[12px] sm:text-[13px] font-medium text-[#5C4A1E] text-center truncate">
       {skill}
     </div>
-    <div className="flex gap-3">
+    <div className="flex gap-1 sm:gap-3 shrink-0">
       {[1, 2, 3, 4, 5].map(n => (
         <button
           key={n}
           type="button"
           onClick={() => onChange(n)}
-          className={`w-10 h-10 rounded-full text-[14px] font-semibold border-2 transition-all ${
+          className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full text-[12px] sm:text-[14px] font-semibold border-2 transition-all ${
             value === n
               ? 'bg-[#8B6914] border-[#8B6914] text-white'
               : 'border-[#C8A870] text-[#C8A870] hover:border-[#8B6914] hover:text-[#8B6914]'
@@ -527,8 +527,8 @@ const Step2 = ({ onNext, discipline }) => {
       <p className="text-[13.5px] text-[#888] mb-8 text-center leading-relaxed max-w-[520px] mx-auto">
         1 indicates amateur level — 5 indicates the highest professional level.
       </p>
-      <div className="bg-white rounded-2xl border border-[#EBEBEB] p-10">
-        <div className="space-y-6">
+      <div className="bg-white rounded-2xl border border-[#EBEBEB] p-4 sm:p-8 lg:p-10">
+        <div className="space-y-4 sm:space-y-6">
           {skillNames.map(skill => (
             <RatingRow key={skill} skill={skill} value={ratings[skill]} onChange={v => setRating(skill, v)} />
           ))}

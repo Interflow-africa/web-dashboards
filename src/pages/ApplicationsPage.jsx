@@ -143,8 +143,8 @@ const ApplicationsPage = () => {
       </div>
 
       {/* Search bar */}
-      <div className="flex gap-2 mb-5 justify-end w-full sm:w-auto">
-        <div className="relative flex-1 sm:flex-none sm:w-[280px]">
+      <div className="flex gap-2 mb-5 w-full">
+        <div className="relative flex-1">
           <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             value={search}
@@ -156,7 +156,7 @@ const ApplicationsPage = () => {
         </div>
         <button
           onClick={handleSearch}
-          className="px-6 py-3 bg-[#8D5D1D] text-white rounded-xl text-[13px] font-semibold hover:bg-[#7A5019] transition-colors shrink-0">
+          className="px-5 py-3 bg-[#8D5D1D] text-white rounded-xl text-[13px] font-semibold hover:bg-[#7A5019] transition-colors shrink-0">
           Search
         </button>
       </div>

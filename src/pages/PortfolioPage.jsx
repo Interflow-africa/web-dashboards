@@ -639,7 +639,7 @@ export const PortfolioPage = () => {
 
   return (
     <DashboardLayout>
-      <div style={{ maxWidth: '960px', width: '100%' }}>
+      <div style={{ maxWidth: '960px', width: '100%', overflow: 'hidden' }}>
         {/* Profile Header */}
         <div className="section-card" style={{ marginBottom: '20px', overflow: 'visible' }}>
           <div style={{ height: '160px', background: 'linear-gradient(135deg, var(--dark) 0%, var(--dark-3) 100%)', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0', position: 'relative' }}>
@@ -659,15 +659,15 @@ export const PortfolioPage = () => {
                     .then(r => setProfile(p => ({ ...p, avatar: r.data.data?.avatar })))
                     .catch(() => toast.error('Upload failed'));
                 }} />
-                📷 Edit Photo
+                📷 <span className="hidden sm:inline">Edit Photo</span>
               </label>
             </div>
           </div>
-          <div style={{ padding: '52px 28px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div className="pt-[52px] px-4 sm:px-7 pb-6">
+            <div className="flex items-start justify-between flex-wrap gap-3">
               <div>
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '26px', fontWeight: '700', color: 'var(--dark)' }}>{name || 'Your Name'}</h2>
-                <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(20px, 5vw, 26px)', fontWeight: '700', color: 'var(--dark)', wordBreak: 'break-word' }}>{name || 'Your Name'}</h2>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px', wordBreak: 'break-word' }}>
                   {profile?.job_title || 'Artist'} · {profile?.city}{profile?.country ? `, ${profile.country}` : ''}
                 </p>
                 {profile?.pronoun_display && (
@@ -679,7 +679,7 @@ export const PortfolioPage = () => {
                   </div>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="flex gap-2 flex-wrap">
                 <button className="btn btn-outline btn-sm" onClick={() =>
                   artistAPI.getShareLink().then(r => {
                     const apiUrl = r.data?.data?.share_url || '';
@@ -704,10 +704,31 @@ export const PortfolioPage = () => {
           </div>
 
           {/* Tabs */}
-          <div style={{ display: 'flex', gap: '0', padding: '0 12px', borderTop: '1px solid var(--border)', overflowX: 'auto' }}>
-            {['bio', 'career', 'works'].map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: '14px 20px', fontSize: '14px', fontWeight: activeTab === tab ? '600' : '400', color: activeTab === tab ? 'var(--gold)' : 'var(--text-muted)', borderBottom: `2px solid ${activeTab === tab ? 'var(--gold)' : 'transparent'}`, background: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', textTransform: 'capitalize', transition: 'all var(--transition)', whiteSpace: 'nowrap' }}>
-                {tab === 'career' ? 'Career & Education' : tab === 'works' ? 'Relevant Works' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+          <div style={{ display: 'flex', borderTop: '1px solid var(--border)' }}>
+            {[
+              { key: 'bio',    label: 'Bio' },
+              { key: 'career', label: 'Career & Education' },
+              { key: 'works',  label: 'Relevant Works' },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                style={{
+                  flex: 1,
+                  padding: '12px 4px',
+                  fontSize: 'clamp(11px, 2.5vw, 14px)',
+                  fontWeight: activeTab === key ? '600' : '400',
+                  color: activeTab === key ? 'var(--gold)' : 'var(--text-muted)',
+                  borderBottom: `2px solid ${activeTab === key ? 'var(--gold)' : 'transparent'}`,
+                  background: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-body)',
+                  transition: 'all var(--transition)',
+                  textAlign: 'center',
+                  minWidth: 0,
+                }}
+              >
+                {label}
               </button>
             ))}
           </div>
@@ -717,11 +738,11 @@ export const PortfolioPage = () => {
         {activeTab === 'bio' && (
           <div className="section-card">
             <div className="section-card-header">
-              <span className="section-card-title">Bio</span>
+              <span className="section-card-title flex-1 min-w-0 mr-2">Bio</span>
               {!isEditingBio && (
                 <button
                   onClick={() => setIsEditingBio(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border border-[#8D5D1D] text-[#8D5D1D] hover:bg-[#F5EED7] transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium border border-[#8D5D1D] text-[#8D5D1D] hover:bg-[#F5EED7] transition-colors shrink-0"
                   style={{ background: '#F5EED7' }}
                 >
                   <Pencil size={11} /> Edit
@@ -818,10 +839,10 @@ export const PortfolioPage = () => {
         {activeTab === 'works' && (
           <div className="section-card">
             <div className="section-card-header">
-              <span className="section-card-title">Relevant Works</span>
+              <span className="section-card-title flex-1 min-w-0 mr-2">Relevant Works</span>
               <button
                 onClick={() => setShowModal(true)}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#8D5D1D] text-white rounded-full text-[12px] font-semibold hover:bg-[#7A5019] transition-colors"
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-[#8D5D1D] text-white rounded-full text-[12px] font-semibold hover:bg-[#7A5019] transition-colors shrink-0"
               >
                 <Plus size={13} /> Add Work
               </button>
@@ -863,12 +884,14 @@ export const PortfolioPage = () => {
         {activeTab === 'career' && (
           <div className="section-card">
             <div className="section-card-header">
-              <span className="section-card-title">Career & Education</span>
+              <span className="section-card-title flex-1 min-w-0 mr-2">Career & Education</span>
               <button
+                aria-label="Add Experience"
                 onClick={() => setExpModal({ mode: 'add' })}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#8D5D1D] text-white rounded-full text-[12px] font-semibold hover:bg-[#7A5019] transition-colors"
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-[#8D5D1D] text-white rounded-full text-[12px] font-semibold hover:bg-[#7A5019] transition-colors shrink-0"
               >
-                <Plus size={13} /> Add Experience
+                <Plus size={13} />
+                <span className="hidden sm:inline">Add Experience</span>
               </button>
             </div>
             <div className="section-card-body">
