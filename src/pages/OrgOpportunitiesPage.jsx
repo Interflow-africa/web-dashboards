@@ -49,20 +49,19 @@ const SKILLS_OPTIONS = [
 ];
 
 const EXPERIENCE_OPTIONS = [
-  { label: 'No minimum',  value: '' },
-  { label: '0 – 1 year',  value: '0_1_year' },
-  { label: '1 – 4 years', value: '1_4_years' },
-  { label: '4 – 7 years', value: '4_7_years' },
-  { label: '7+ years',    value: '7_plus_years' },
+  { label: 'No minimum',   value: '' },
+  { label: 'Entry Level',  value: 'entry_level' },
+  { label: 'Intermediate', value: 'intermediate' },
+  { label: 'Senior',       value: 'senior' },
+  { label: 'Expert',       value: 'expert' },
 ];
 
 const SALARY_RANGE_OPTIONS = [
-  { label: 'None',                      value: '' },
-  { label: '₦0 – ₦80,000',             value: '0_50' },
-  { label: '₦80,000 – ₦160,000',       value: '50_100' },
-  { label: '₦160,000 – ₦800,000',      value: '100_500' },
-  { label: '₦800,000 – ₦1,600,000',    value: '500_1000' },
-  { label: '₦1,600,000+',              value: '1000_plus' },
+  { label: 'None',         value: '' },
+  { label: 'Fixed Amount', value: 'fixed_amount' },
+  { label: 'Range',        value: 'range' },
+  { label: 'Competitive',  value: 'competitive' },
+  { label: 'Negotiable',   value: 'negotiable' },
 ];
 
 const PAYMENT_TYPE_OPTIONS = [
@@ -72,12 +71,25 @@ const PAYMENT_TYPE_OPTIONS = [
   { label: 'Volunteer',  value: 'volunteer' },
 ];
 
+const WORK_ARRANGEMENT_OPTIONS = [
+  { label: 'On-site', value: 'on_site' },
+  { label: 'Remote',  value: 'remote' },
+  { label: 'Hybrid',  value: 'hybrid' },
+];
+
+const CONTRACT_TYPE_OPTIONS = [
+  { label: 'Full Time', value: 'full_time' },
+  { label: 'Part Time', value: 'part_time' },
+  { label: 'Hybrid',    value: 'hybrid' },
+];
+
 const CURRENCY_OPTIONS = ['NGN', 'USD', 'GBP', 'EUR', 'ZAR', 'GHS'];
 
 const SORT_OPTIONS = [
-  { label: 'Newest First',    value: '-created_at' },
-  { label: 'Oldest First',    value: 'created_at' },
-  { label: 'Deadline Soonest', value: 'opportunity_close_date' },
+  { label: 'Newest First',       value: 'newest' },
+  { label: 'Oldest First',       value: 'oldest' },
+  { label: 'Most Applications',  value: 'most_applications' },
+  { label: 'Closing Soon',       value: 'closing_soon' },
 ];
 
 /* Category → accent color */
@@ -104,10 +116,11 @@ const APP_STATUS_BADGE = {
   withdrawn:    'bg-gray-100 text-gray-500',
 };
 
-/* Opportunity status badge */
+/* Opportunity status badge — keyed by `effective_status` from the API */
 const OPP_STATUS_BADGE = {
   active:    'bg-green-100 text-green-700',
   draft:     'bg-amber-100 text-amber-700',
+  expired:   'bg-orange-100 text-orange-700',
   closed:    'bg-gray-100 text-gray-500',
   cancelled: 'bg-red-100 text-red-600',
 };
@@ -140,7 +153,7 @@ const buildFormSchema = (form) => {
   if (form.requires_experience)
     schema.push({ key: 'experience', label: 'Experience', type: 'select', required: true,
       options: ['0 - 1 years', '1 - 4 years', '4 - 7 years', '7+ years'] });
-  if (form.salary_range)
+  if (form.salary_range && form.payment_type !== 'unpaid')
     schema.push({ key: 'salary_range', label: 'Salary range', type: 'select', required: false,
       options: ['₦0 - ₦80,000', '₦80,000 - ₦160,000', '₦160,000 - ₦800,000', '₦800,000 - ₦1,600,000', '₦1,600,000+'] });
   if (form.requires_address)
@@ -210,11 +223,8 @@ const ViewOpportunityModal = ({ opp: initialOpp, onClose, onRefresh }) => {
     setDetailLoading(true);
     setApplicantsLoading(true);
 
-    opportunitiesAPI.detail(initialOpp.id)
-      .then(r => {
-        console.log('response: ', r);
-        
-        setOpp(r.data.data)})
+    opportunitiesAPI.manageDetail(initialOpp.id)
+      .then(r => setOpp(r.data.data))
       .catch(() => toast.error('Could not load opportunity details'))
       .finally(() => setDetailLoading(false));
 
@@ -264,8 +274,8 @@ const ViewOpportunityModal = ({ opp: initialOpp, onClose, onRefresh }) => {
               </div>
               <p className="font-bold text-gray-900 text-[13px] mb-0.5 leading-snug">{opp.title}</p>
               <p className="text-[11px] text-gray-400 mb-1">Category: {catLabel}</p>
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block mb-4 ${OPP_STATUS_BADGE[opp.application_status] || 'bg-gray-100 text-gray-500'}`}>
-                {opp.application_status}
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block mb-4 ${OPP_STATUS_BADGE[opp.effective_status] || 'bg-gray-100 text-gray-500'}`}>
+                {opp.effective_status_display || opp.effective_status}
               </span>
               <nav className="flex flex-col gap-1">
                 {tabs.map(tab => (
@@ -281,18 +291,25 @@ const ViewOpportunityModal = ({ opp: initialOpp, onClose, onRefresh }) => {
 
               {/* Quick actions */}
               <div className="mt-4 flex flex-col gap-2">
-                {opp.application_status === 'draft' && (
+                {opp.effective_status === 'draft' && (
                   <button disabled={acting}
                     onClick={() => doAction(() => opportunitiesAPI.publish(opp.id), 'Publish')}
                     className="flex items-center gap-1.5 text-[11px] font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors disabled:opacity-50">
                     <Send size={11} /> Publish
                   </button>
                 )}
-                {opp.application_status === 'active' && (
+                {opp.effective_status === 'active' && (
                   <button disabled={acting}
                     onClick={() => doAction(() => opportunitiesAPI.close(opp.id), 'Close')}
                     className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors disabled:opacity-50">
                     <XCircle size={11} /> Close
+                  </button>
+                )}
+                {opp.effective_status !== 'cancelled' && (
+                  <button disabled={acting}
+                    onClick={() => doAction(() => opportunitiesAPI.cancel(opp.id), 'Cancel')}
+                    className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-lg transition-colors disabled:opacity-50">
+                    <XCircle size={11} /> Cancel
                   </button>
                 )}
                 <button disabled={acting}
@@ -346,12 +363,13 @@ const ViewOpportunityModal = ({ opp: initialOpp, onClose, onRefresh }) => {
                   <div><label className={labelCls}>Close Date</label><div className={readonlyCls}>{fmtDate(opp.opportunity_close_date)}</div></div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  <div><label className={labelCls}>Payment Type</label><div className={readonlyCls}>{opp.payment_type || '—'}</div></div>
+                  <div><label className={labelCls}>Payment Type</label><div className={readonlyCls}>{opp.payment_type_display || opp.payment_type || '—'}</div></div>
                   <div><label className={labelCls}>Currency</label><div className={readonlyCls}>{opp.currency || '—'}</div></div>
                   <div><label className={labelCls}>Budget</label><div className={readonlyCls}>{opp.budget ? Number(opp.budget).toLocaleString() : '—'}</div></div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><label className={labelCls}>Remote</label><div className={readonlyCls}>{opp.is_remote ? 'Yes' : 'No'}</div></div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div><label className={labelCls}>Work Arrangement</label><div className={readonlyCls}>{opp.work_arrangement_display || WORK_ARRANGEMENT_OPTIONS.find(o => o.value === opp.work_arrangement)?.label || '—'}</div></div>
+                  <div><label className={labelCls}>Contract Type</label><div className={readonlyCls}>{opp.contract_type_display || CONTRACT_TYPE_OPTIONS.find(o => o.value === opp.contract_type)?.label || '—'}</div></div>
                   <div><label className={labelCls}>Experience Required</label><div className={readonlyCls}>{EXPERIENCE_OPTIONS.find(e => e.value === opp.requires_experience)?.label || 'No minimum'}</div></div>
                 </div>
                 {opp.disciplines?.length > 0 && (
@@ -436,31 +454,41 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
   const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
-    category:               'performance',
-    title:                  '',
-    description:            '',
-    country:                '',
-    city:                   '',
-    location:               '',
-    opportunity_close_date: '',
-    application_status:     'active',
-    requirements:           '',
-    is_remote:              false,
-    start_date:             '',
-    end_date:               '',
-    disciplines:            [],
-    skills_required:        [],
-    requires_experience:    '',
-    payment_type:           'fixed',
-    budget:                 '',
-    currency:               'NGN',
-    salary_range:           '',
-    requires_address:       false,
+    category:                'performance',
+    title:                   '',
+    description:             '',
+    country:                 '',
+    city:                    '',
+    location:                '',
+    opportunity_close_date:  '',
+    publish_immediately:     true,
+    requirements:            '',
+    work_arrangement:        'on_site',
+    contract_type:           'full_time',
+    start_date:              '',
+    end_date:                '',
+    disciplines:             [],
+    skills_required:         [],
+    requires_experience:     '',
+    payment_type:            'fixed',
+    budget:                  '',
+    currency:                'NGN',
+    salary_range:            '',
+    requires_address:        false,
     requires_portfolio_link: false,
   });
 
-  const set  = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k, v) => setForm(f => {
+    const next = { ...f, [k]: v };
+    // When payment type switches to "volunteer", clear budget/salary fields.
+    if (k === 'payment_type' && v === 'volunteer') {
+      next.budget = '';
+      next.salary_range = '';
+    }
+    return next;
+  });
   const setE = (k) => (e) => set(k, e.target.value);
+  const isVolunteer = form.payment_type === 'volunteer';
 
   const stepLabels = ['Details', 'Requirements', 'Preview & Post'];
 
@@ -515,6 +543,7 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
     if (!form.category)     { toast.error('Please select a category'); return; }
     setSubmitting(true);
     try {
+      const volunteer = form.payment_type === 'volunteer';
       const payload = {
         category:                form.category,
         title:                   form.title,
@@ -522,24 +551,24 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
         country:                 form.country,
         city:                    form.city,
         location:                form.location,
-        application_status:      form.application_status,
+        work_arrangement:        form.work_arrangement,
+        contract_type:           form.contract_type,
         requirements:            form.requirements || undefined,
-        is_remote:               form.is_remote,
         disciplines:             form.disciplines,
         skills_required:         form.skills_required,
         payment_type:            form.payment_type,
-        currency:                form.currency,
         requires_portfolio_link: form.requires_portfolio_link,
         requires_address:        form.requires_address,
         application_form_schema: buildFormSchema(form),
         ...(form.opportunity_close_date && { opportunity_close_date: form.opportunity_close_date }),
         ...(form.start_date            && { start_date:              form.start_date }),
         ...(form.end_date              && { end_date:                form.end_date }),
-        ...(form.budget                && { budget:                  form.budget }),
         ...(form.requires_experience   && { requires_experience:     form.requires_experience }),
-        ...(form.salary_range          && { salary_range:            form.salary_range }),
+        ...(!volunteer && { currency: form.currency }),
+        ...(!volunteer && form.budget       && { budget:       form.budget }),
+        ...(!volunteer && form.salary_range && { salary_range: form.salary_range }),
       };
-      await opportunitiesAPI.create(payload, form.application_status === 'active');
+      await opportunitiesAPI.create(payload, form.publish_immediately);
       toast.success('Opportunity created!');
       onCreated();
       onClose();
@@ -599,16 +628,16 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
               <label className={labelCls}>Venue / Location</label>
               <input className={inputCls} placeholder="e.g. Terra Kulture, Victoria Island" value={form.location} onChange={setE('location')} />
             </div>
-            <Toggle checked={form.is_remote} onChange={v => set('is_remote', v)} label="This is a remote opportunity" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Select lbl="Work Arrangement" field="work_arrangement" options={WORK_ARRANGEMENT_OPTIONS} />
+              <Select lbl="Contract Type"    field="contract_type"    options={CONTRACT_TYPE_OPTIONS} />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div><label className={labelCls}>Start Date</label><input type="date" className={inputCls} value={form.start_date} onChange={setE('start_date')} /></div>
               <div><label className={labelCls}>End Date</label><input type="date" className={inputCls} value={form.end_date} onChange={setE('end_date')} /></div>
               <div><label className={labelCls}>Application Close Date</label><input type="date" className={inputCls} value={form.opportunity_close_date} onChange={setE('opportunity_close_date')} /></div>
             </div>
-            <Select lbl="Application Status" field="application_status" options={[
-              { label: 'Active', value: 'active' },
-              { label: 'Draft',  value: 'draft' },
-            ]} />
+            <Toggle checked={form.publish_immediately} onChange={v => set('publish_immediately', v)} label="Publish immediately (uncheck to save as draft)" />
             <button onClick={() => setStep(2)}
               className="w-full h-11 rounded-full bg-[#8D5D1D] text-white text-[13px] font-semibold mt-1 hover:bg-[#7A5019] transition-colors flex items-center justify-center gap-2">
               Continue to Requirements <ArrowRight size={14} />
@@ -632,14 +661,18 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
               <Select lbl="Experience Required" field="requires_experience" options={EXPERIENCE_OPTIONS} placeholder="No minimum" />
               <Select lbl="Payment Type" field="payment_type" options={PAYMENT_TYPE_OPTIONS} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="col-span-2">
-                <label className={labelCls}>Budget</label>
-                <input className={inputCls} type="number" min="0" step="0.01" placeholder="e.g. 250000.00" value={form.budget} onChange={setE('budget')} />
-              </div>
-              <Select lbl="Currency" field="currency" options={CURRENCY_OPTIONS} />
-            </div>
-            <Select lbl="Salary Range (for display)" field="salary_range" options={SALARY_RANGE_OPTIONS} placeholder="None" />
+            {!isVolunteer && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="col-span-2">
+                    <label className={labelCls}>Budget</label>
+                    <input className={inputCls} type="number" min="0" step="0.01" placeholder="e.g. 250000.00" value={form.budget} onChange={setE('budget')} />
+                  </div>
+                  <Select lbl="Currency" field="currency" options={CURRENCY_OPTIONS} />
+                </div>
+                <Select lbl="Salary Range Structure" field="salary_range" options={SALARY_RANGE_OPTIONS} placeholder="None" />
+              </>
+            )}
             <div>
               <p className={sectionCls}>Application Form Fields</p>
               <p className="text-[11.5px] text-gray-400 mb-3">City and Country are always included. Toggle the additional fields below.</p>
@@ -676,27 +709,32 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
             <p className="text-[12px] text-gray-400 mb-1">Review the details before posting your opportunity.</p>
             <div className="grid grid-cols-2 gap-3">
               <div><label className={labelCls}>Category</label><div className={readonlyCls}>{OPPORTUNITY_CATEGORIES.find(c => c.value === form.category)?.label}</div></div>
-              <div><label className={labelCls}>Status</label><div className={readonlyCls}>{form.application_status === 'active' ? 'Active' : 'Draft'}</div></div>
+              <div><label className={labelCls}>Status</label><div className={readonlyCls}>{form.publish_immediately ? 'Publish immediately' : 'Save as draft'}</div></div>
             </div>
             <div><label className={labelCls}>Title*</label><div className={readonlyCls}>{form.title || <span className="text-gray-300">—</span>}</div></div>
             <div><label className={labelCls}>Description</label><div className={`${readonlyCls} min-h-[60px] items-start pt-2.5`}>{form.description || <span className="text-gray-300">—</span>}</div></div>
             <div><label className={labelCls}>Requirements</label><div className={`${readonlyCls} min-h-[44px] items-start pt-2.5`}>{form.requirements || <span className="text-gray-300">—</span>}</div></div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label className={labelCls}>Country</label><div className={readonlyCls}>{form.country || '—'}</div></div>
               <div><label className={labelCls}>City</label><div className={readonlyCls}>{form.city || '—'}</div></div>
-              <div><label className={labelCls}>Remote</label><div className={readonlyCls}>{form.is_remote ? 'Yes' : 'No'}</div></div>
             </div>
             <div><label className={labelCls}>Venue / Location</label><div className={readonlyCls}>{form.location || '—'}</div></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label className={labelCls}>Work Arrangement</label><div className={readonlyCls}>{WORK_ARRANGEMENT_OPTIONS.find(o => o.value === form.work_arrangement)?.label || '—'}</div></div>
+              <div><label className={labelCls}>Contract Type</label><div className={readonlyCls}>{CONTRACT_TYPE_OPTIONS.find(o => o.value === form.contract_type)?.label || '—'}</div></div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div><label className={labelCls}>Start Date</label><div className={readonlyCls}>{form.start_date || '—'}</div></div>
               <div><label className={labelCls}>End Date</label><div className={readonlyCls}>{form.end_date || '—'}</div></div>
               <div><label className={labelCls}>Application Close</label><div className={readonlyCls}>{form.opportunity_close_date || '—'}</div></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className={isVolunteer ? '' : 'grid grid-cols-2 gap-3'}>
               <div><label className={labelCls}>Payment Type</label><div className={readonlyCls}>{PAYMENT_TYPE_OPTIONS.find(p => p.value === form.payment_type)?.label}</div></div>
-              <div><label className={labelCls}>Currency</label><div className={readonlyCls}>{form.currency}</div></div>
+              {!isVolunteer && (
+                <div><label className={labelCls}>Currency</label><div className={readonlyCls}>{form.currency}</div></div>
+              )}
             </div>
-            {form.budget && (
+            {!isVolunteer && form.budget && (
               <div><label className={labelCls}>Budget</label><div className={readonlyCls}>{form.currency} {Number(form.budget).toLocaleString()}</div></div>
             )}
             {form.disciplines.length > 0 && (
@@ -754,12 +792,11 @@ const OrgOpportunitiesPage = () => {
   const [filterOpen,      setFilterOpen]      = useState(true);
   const [search,          setSearch]          = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [filterCategory,  setFilterCategory]  = useState('');
-  const [filterStatus,    setFilterStatus]    = useState('');
-  const [filterPayment,   setFilterPayment]   = useState('');
-  const [filterRemote,    setFilterRemote]    = useState('');
-  {/* const [sortBy,          setSortBy]          = useState('-created_at'); */}
-  const [sortBy,          setSortBy]          = useState('');
+  const [filterCategory,        setFilterCategory]        = useState('');
+  const [filterStatus,          setFilterStatus]          = useState('');
+  const [filterPayment,         setFilterPayment]         = useState('');
+  const [filterWorkArrangement, setFilterWorkArrangement] = useState('');
+  const [sortBy,                setSortBy]                = useState('');
   const [sortOpen,        setSortOpen]        = useState(false);
 
   /* ── Modals ── */
@@ -784,21 +821,23 @@ const OrgOpportunitiesPage = () => {
   const loadOpps = useCallback(() => {
     setLoading(true);
     const params = {};
-    if (debouncedSearch) params.search             = debouncedSearch;
-    if (filterCategory)  params.category           = filterCategory;
-    if (filterStatus)    params.application_status = filterStatus;
-    if (filterPayment)   params.payment_type        = filterPayment;
-    if (filterRemote)    params.is_remote           = filterRemote;
+    if (debouncedSearch)        params.search           = debouncedSearch;
+    if (filterCategory)         params.category         = filterCategory;
+    if (filterStatus)           params.status           = filterStatus;
+    if (filterPayment)          params.payment_type     = filterPayment;
+    if (filterWorkArrangement)  params.work_arrangement = filterWorkArrangement;
+    if (sortBy)                 params.sort             = sortBy;
 
     opportunitiesAPI.manage(params)
       .then(r => {
         const d = r.data;
-        setOpps(d.results || d.data || []);
-        setTotal(d.count ?? (d.results ?? d.data ?? []).length);
+        const list = d.results || d.data || [];
+        setOpps(list);
+        setTotal(d.count ?? list.length);
       })
       .catch(() => toast.error('Failed to load opportunities'))
       .finally(() => setLoading(false));
-  }, [debouncedSearch, filterCategory, filterStatus, filterPayment, filterRemote, sortBy]);
+  }, [debouncedSearch, filterCategory, filterStatus, filterPayment, filterWorkArrangement, sortBy]);
 
   useEffect(() => { loadOpps(); }, [loadOpps]);
 
@@ -807,10 +846,10 @@ const OrgOpportunitiesPage = () => {
     setFilterCategory('');
     setFilterStatus('');
     setFilterPayment('');
-    setFilterRemote('');
+    setFilterWorkArrangement('');
     setSearch('');
   };
-  const hasFilters = filterCategory || filterStatus || filterPayment || filterRemote || debouncedSearch;
+  const hasFilters = filterCategory || filterStatus || filterPayment || filterWorkArrangement || debouncedSearch;
 
   /* ── Filter sidebar radio group ── */
   const RadioGroup = ({ label, options, value, onChange }) => (
@@ -860,6 +899,7 @@ const OrgOpportunitiesPage = () => {
                 { label: 'Active',    value: 'active' },
                 { label: 'Draft',     value: 'draft' },
                 { label: 'Closed',    value: 'closed' },
+                { label: 'Expired',   value: 'expired' },
                 { label: 'Cancelled', value: 'cancelled' },
               ]}
             />
@@ -879,13 +919,10 @@ const OrgOpportunitiesPage = () => {
             />
 
             <RadioGroup
-              label="Location"
-              value={filterRemote}
-              onChange={setFilterRemote}
-              options={[
-                { label: 'Remote',  value: 'true' },
-                { label: 'On-site', value: 'false' },
-              ]}
+              label="Work Arrangement"
+              value={filterWorkArrangement}
+              onChange={setFilterWorkArrangement}
+              options={WORK_ARRANGEMENT_OPTIONS}
             />
 
             <button onClick={() => setFilterOpen(false)}
@@ -1006,8 +1043,8 @@ const OrgOpportunitiesPage = () => {
                         <p className="font-bold text-[13px] text-gray-900 truncate leading-snug">{opp.title}</p>
                         <p className="text-[11px] text-gray-400 truncate">{[opp.city, opp.country].filter(Boolean).join(', ') || 'Location TBD'}</p>
                       </div>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${OPP_STATUS_BADGE[opp.application_status] || 'bg-gray-100 text-gray-500'}`}>
-                        {opp.application_status}
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${OPP_STATUS_BADGE[opp.effective_status] || 'bg-gray-100 text-gray-500'}`}>
+                        {opp.effective_status_display || opp.effective_status}
                       </span>
                     </div>
 
@@ -1015,7 +1052,7 @@ const OrgOpportunitiesPage = () => {
                     <p className="text-[11px] text-gray-400">
                       {relativeTime(opp.created_at)}
                       {opp.opportunity_close_date && <> · Closes {fmtDate(opp.opportunity_close_date)}</>}
-                      {opp.payment_type && <> · {opp.payment_type}</>}
+                      {opp.payment_type && <> · {opp.payment_type_display || opp.payment_type}</>}
                     </p>
 
                     {/* Description snippet */}
@@ -1026,7 +1063,11 @@ const OrgOpportunitiesPage = () => {
                     {/* Tags */}
                     <div className="flex flex-wrap gap-1.5">
                       <span className="bg-[#8D5D1D]/10 text-[#8D5D1D] text-[10px] rounded-full px-2.5 py-0.5 font-medium">{catLabel}</span>
-                      {opp.is_remote && <span className="bg-blue-50 text-blue-600 text-[10px] rounded-full px-2.5 py-0.5 font-medium">Remote</span>}
+                      {(opp.work_arrangement === 'remote' || opp.work_arrangement === 'hybrid') && (
+                        <span className="bg-blue-50 text-blue-600 text-[10px] rounded-full px-2.5 py-0.5 font-medium">
+                          {opp.work_arrangement_display || (opp.work_arrangement === 'remote' ? 'Remote' : 'Hybrid')}
+                        </span>
+                      )}
                       {disciplines.map(d => (
                         <span key={d} className="bg-gray-100 text-gray-500 text-[10px] rounded-full px-2.5 py-0.5">
                           {DISCIPLINE_OPTIONS.find(o => o.value === d)?.label || d}

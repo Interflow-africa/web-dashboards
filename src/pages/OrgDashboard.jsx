@@ -47,9 +47,9 @@ const ActiveOppsCard = ({ rows = [] }) => {
             {rows.length > 0
               ? rows.map(row => (
                   <tr key={row.id} className="border-t border-gray-50">
-                    <td className="py-2 text-[#1A1A1A] truncate max-w-[120px]">{row.title || row.name || '—'}</td>
-                    <td className="py-2 text-[#1A1A1A]">{row.applications_count ?? row.total_applications ?? row.applications ?? 0}</td>
-                    <td className="py-2"><StatusBadge status={row.status_label} /></td>
+                    <td className="py-2 text-[#1A1A1A] max-w-[160px] truncate">{row.title || row.name || '—'}</td>
+                    <td className="py-2 text-[#1A1A1A] whitespace-nowrap">{row.applications_count ?? row.total_applications ?? row.applications ?? 0}</td>
+                    <td className="py-2 whitespace-nowrap"><StatusBadge status={row.status_label} /></td>
                   </tr>
                 ))
               : (
@@ -235,11 +235,12 @@ const OrgDashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="relative min-h-full rounded-2xl" style={{ background: '#F8F8F7', padding: '28px 28px 40px' }}>
+      <div className="relative min-h-full rounded-2xl overflow-hidden p-4 sm:p-7 sm:pb-10" style={{ background: '#F8F8F7' }}>
 
-        {/* Decorative ring */}
+        {/* Decorative ring — hidden on mobile to avoid clutter */}
         <svg
           width="160" height="160" viewBox="0 0 160 160"
+          className="hidden sm:block"
           style={{ position: 'absolute', top: -20, right: -20, opacity: 0.5, pointerEvents: 'none' }}
         >
           <circle cx="80" cy="80" r="60" fill="none" stroke="#8D5D1D" strokeWidth="2" strokeDasharray="8 6" />
@@ -248,93 +249,125 @@ const OrgDashboard = () => {
         </svg>
 
         {/* Welcome */}
-        <div className="mb-6">
-          <h1 style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 700, fontSize: 26, color: '#1A1A1A', marginBottom: 4 }}>
+        <div className="mb-5 sm:mb-6">
+          <h1 className="text-[20px] sm:text-[26px] font-bold text-[#1A1A1A] leading-tight" style={{ fontFamily: 'Montserrat, sans-serif' }}>
             Welcome back{orgName ? `, ${orgName}` : ''}!
           </h1>
-          <p style={{ fontSize: 14, color: '#888' }}>Pick up from where you left off with Interflow</p>
+          <p className="text-[12.5px] sm:text-[14px] text-[#888] mt-1">Pick up from where you left off with Interflow</p>
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5 sm:mb-6">
 
           {/* Opportunities posted */}
-          <div className="rounded-2xl p-6 flex flex-col gap-3" style={{ background: '#EBF4FF' }}>
-            <p className="text-[12px] font-semibold" style={{ color: '#1565C0' }}>Opportunities posted</p>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1565C0" strokeWidth="1.8">
+          <div className="rounded-2xl p-3 sm:p-6 flex flex-col gap-2 sm:gap-3" style={{ background: '#EBF4FF' }}>
+            <p className="text-[11px] sm:text-[12px] font-semibold leading-tight" style={{ color: '#1565C0' }}>Opportunities posted</p>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
+                <svg width="16" height="16" className="sm:hidden" viewBox="0 0 24 24" fill="none" stroke="#1565C0" strokeWidth="1.8">
+                  <rect x="5" y="3" width="14" height="18" rx="2" />
+                  <line x1="9" y1="8" x2="15" y2="8" />
+                  <line x1="9" y1="12" x2="15" y2="12" />
+                  <line x1="9" y1="16" x2="12" y2="16" />
+                </svg>
+                <svg width="20" height="20" className="hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="#1565C0" strokeWidth="1.8">
                   <rect x="5" y="3" width="14" height="18" rx="2" />
                   <line x1="9" y1="8" x2="15" y2="8" />
                   <line x1="9" y1="12" x2="15" y2="12" />
                   <line x1="9" y1="16" x2="12" y2="16" />
                 </svg>
               </div>
-              <span style={{ fontSize: 36, fontWeight: 700, color: '#1565C0', lineHeight: 1 }}>{stats.opportunitiesPosted}</span>
+              <span className="text-[26px] sm:text-[36px] font-bold leading-none" style={{ color: '#1565C0' }}>{stats.opportunitiesPosted}</span>
             </div>
           </div>
 
           {/* Active Opportunities */}
-          <div className="rounded-2xl p-6 flex flex-col gap-3" style={{ background: '#EDFAF3' }}>
-            <p className="text-[12px] font-semibold" style={{ color: '#1B7A4E' }}>Active Opportunities</p>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B7A4E" strokeWidth="1.8">
+          <div className="rounded-2xl p-3 sm:p-6 flex flex-col gap-2 sm:gap-3" style={{ background: '#EDFAF3' }}>
+            <p className="text-[11px] sm:text-[12px] font-semibold leading-tight" style={{ color: '#1B7A4E' }}>Active Opportunities</p>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
+                <svg width="16" height="16" className="sm:hidden" viewBox="0 0 24 24" fill="none" stroke="#1B7A4E" strokeWidth="1.8">
+                  <path d="M3 7a2 2 0 012-2h14a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                  <polyline points="9,12 11,14 15,10" />
+                </svg>
+                <svg width="20" height="20" className="hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="#1B7A4E" strokeWidth="1.8">
                   <path d="M3 7a2 2 0 012-2h14a2 2 0 012 2v11a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
                   <polyline points="9,12 11,14 15,10" />
                 </svg>
               </div>
-              <span style={{ fontSize: 36, fontWeight: 700, color: '#1B7A4E', lineHeight: 1 }}>{stats.activeOpps}</span>
+              <span className="text-[26px] sm:text-[36px] font-bold leading-none" style={{ color: '#1B7A4E' }}>{stats.activeOpps}</span>
             </div>
           </div>
 
           {/* Applications */}
-          <div className="rounded-2xl p-6 flex flex-col gap-3" style={{ background: '#FFF8EC' }}>
-            <p className="text-[12px] font-semibold" style={{ color: '#B45309' }}>Applications</p>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="1.8">
+          <div className="rounded-2xl p-3 sm:p-6 flex flex-col gap-2 sm:gap-3 col-span-2 sm:col-span-1" style={{ background: '#FFF8EC' }}>
+            <p className="text-[11px] sm:text-[12px] font-semibold leading-tight" style={{ color: '#B45309' }}>Applications</p>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0">
+                <svg width="16" height="16" className="sm:hidden" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="1.8">
+                  <rect x="2" y="7" width="20" height="14" rx="2" />
+                  <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
+                </svg>
+                <svg width="20" height="20" className="hidden sm:block" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="1.8">
                   <rect x="2" y="7" width="20" height="14" rx="2" />
                   <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" />
                 </svg>
               </div>
-              <span style={{ fontSize: 36, fontWeight: 700, color: '#B45309', lineHeight: 1 }}>{stats.applications}</span>
+              <span className="text-[26px] sm:text-[36px] font-bold leading-none" style={{ color: '#B45309' }}>{stats.applications}</span>
             </div>
           </div>
 
-          {/* Profile progress */}
-          <div className="rounded-2xl p-6 bg-white shadow-sm border border-gray-100 flex flex-col items-center gap-2">
-            <p className="text-[13px] font-bold text-[#1A1A1A] self-start truncate w-full">{orgName || 'Organization'}</p>
-            <div className="relative flex items-center justify-center">
+          {/* Profile progress — spans both columns on mobile, single col on lg+ */}
+          <div className="rounded-2xl p-4 sm:p-6 bg-white shadow-sm border border-gray-100 col-span-2 lg:col-span-1 flex flex-row lg:flex-col items-center gap-3 sm:gap-2">
+            <div className="relative flex items-center justify-center shrink-0">
               <DonutProgress percent={stats.profileProgress} />
               <span className="absolute text-[13px] font-bold text-[#1A1A1A]">{stats.profileProgress}%</span>
             </div>
-            <span className="text-[11px] font-semibold px-3 py-1 rounded-full text-center" style={{ background: '#FFF3E0', color: '#8D5D1D' }}>
-              Profile progress: {stats.profileProgress < 100 ? 'Not completed' : 'Completed'} ({stats.profileProgress}%)
-            </span>
-            <button
-              onClick={() => navigate('/org/profile')}
-              className="text-[12px] font-semibold mt-1"
-              style={{ color: '#8D5D1D' }}
-            >
-              Edit your company profile
-            </button>
+            <div className="flex-1 min-w-0 flex flex-col items-start lg:items-center gap-1.5 lg:gap-2 w-full">
+              <p className="text-[13px] font-bold text-[#1A1A1A] truncate w-full lg:text-center">{orgName || 'Organization'}</p>
+              <span className="text-[10.5px] sm:text-[11px] font-semibold px-2.5 py-1 rounded-full text-center" style={{ background: '#FFF3E0', color: '#8D5D1D' }}>
+                Profile progress: {stats.profileProgress < 100 ? 'Not completed' : 'Completed'} ({stats.profileProgress}%)
+              </span>
+              <button
+                onClick={() => navigate('/org/profile')}
+                className="text-[12px] font-semibold lg:mt-1 text-left lg:text-center"
+                style={{ color: '#8D5D1D' }}
+              >
+                Edit your company profile
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Gender Distribution — full width */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm mb-5">
-          <div className="flex items-start gap-6">
+        <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm mb-5">
+          {/* Mobile: title + year dropdown in one row */}
+          <div className="flex items-center justify-between gap-3 mb-3 sm:hidden">
+            <p className="text-[14px] font-bold text-[#1A1A1A]">Gender Application Distribution</p>
+            <div className="relative inline-flex items-center shrink-0">
+              <select
+                value={selectedYear}
+                onChange={e => setSelectedYear(Number(e.target.value))}
+                className="appearance-none pl-3 pr-7 py-1.5 rounded-full text-white text-[11.5px] font-semibold cursor-pointer"
+                style={{ background: '#8D5D1D', border: 'none', outline: 'none' }}
+              >
+                {yearOptions.map(yr => <option key={yr} value={yr}>{yr}</option>)}
+              </select>
+              <ChevronDown size={12} className="absolute right-2 text-white pointer-events-none" />
+            </div>
+          </div>
 
-            {/* Left: title + opportunity pills */}
-            <div className="flex flex-col gap-3" style={{ minWidth: 170 }}>
-              <p className="text-[14px] font-bold text-[#1A1A1A]">Gender Application Distribution</p>
-              <div className="flex flex-col gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
+
+            {/* Left (sm+): title + opportunity pills. On mobile: just pills, scroll horizontally */}
+            <div className="flex flex-col gap-3 sm:min-w-[170px]">
+              <p className="hidden sm:block text-[14px] font-bold text-[#1A1A1A]">Gender Application Distribution</p>
+              <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-visible -mx-1 px-1 sm:mx-0 sm:px-0">
                 {oppPills.map(opp => (
                   <button
                     key={opp}
                     onClick={() => setSelectedOpp(selectedOpp === opp ? null : opp)}
-                    className="text-[11px] px-4 py-1.5 rounded-full border text-left transition-all"
+                    className="text-[11px] px-3 sm:px-4 py-1.5 rounded-full border text-left transition-all whitespace-nowrap shrink-0"
                     style={{
                       borderColor: selectedOpp === opp ? '#8D5D1D' : '#E0E0E0',
                       color:       selectedOpp === opp ? '#8D5D1D' : '#666',
@@ -356,10 +389,10 @@ const OrgDashboard = () => {
               <GenderDonut slices={genderSlices} />
             </div>
 
-            {/* Right: year dropdown + legend */}
-            <div className="flex flex-col items-end gap-4">
-              {/* Year dropdown styled as pill */}
-              <div className="relative inline-flex items-center">
+            {/* Right: year dropdown (sm+) + legend */}
+            <div className="flex flex-col sm:items-end gap-4">
+              {/* Year dropdown — sm+ only (mobile shows it in the header row above) */}
+              <div className="relative hidden sm:inline-flex items-center">
                 <select
                   value={selectedYear}
                   onChange={e => setSelectedYear(Number(e.target.value))}
@@ -371,8 +404,8 @@ const OrgDashboard = () => {
                 <ChevronDown size={13} className="absolute right-2.5 text-white pointer-events-none" />
               </div>
 
-              {/* Legend */}
-              <div className="flex flex-col gap-2.5 mt-2">
+              {/* Legend — horizontal wrap on mobile, vertical on sm+ */}
+              <div className="flex flex-wrap sm:flex-col gap-x-4 gap-y-2 sm:gap-2.5 sm:mt-2 justify-center sm:justify-end">
                 {genderSlices.map(s => (
                   <div key={s.label} className="flex items-center gap-2 text-[12px] text-[#444]">
                     <span className="w-3 h-3 rounded-full shrink-0" style={{ background: s.color }} />
@@ -385,10 +418,10 @@ const OrgDashboard = () => {
         </div>
 
         {/* Applications Overview + Active Opps */}
-        <div className="flex flex-col lg:flex-row gap-5">
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-5">
 
           {/* Applications Overview */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col gap-4" style={{ flex: '1 1 420px' }}>
+          <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col gap-4 lg:flex-[1_1_420px] min-w-0">
             <div className="flex items-center justify-between">
               <p className="text-[14px] font-bold text-[#1A1A1A]">Applications Overview</p>
               <button
@@ -400,8 +433,8 @@ const OrgDashboard = () => {
               </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-[12px]">
+            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+              <table className="w-full text-[12px] min-w-[440px]">
                 <thead>
                   <tr className="text-[#888] text-left border-b border-gray-100">
                     <th className="pb-2 font-medium">Applicants</th>
@@ -438,7 +471,7 @@ const OrgDashboard = () => {
           </div>
 
           {/* Single Active Opps card */}
-          <div style={{ flex: '1 1 280px' }}>
+          <div className="lg:flex-[1_1_280px] min-w-0">
             <ActiveOppsCard rows={activeOpps} />
           </div>
         </div>
