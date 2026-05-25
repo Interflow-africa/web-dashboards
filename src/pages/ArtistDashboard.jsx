@@ -177,8 +177,8 @@ const ArtistDashboard = () => {
   const [oppPage, setOppPage]       = useState(0);
   const [connectingId, setConnectingId] = useState(null);
 
-  const firstName = user?.profile.first_name || user?.email?.split('@')[0] || 'Artist';
-  const fullName  = user?.profile.full_name ? `${user.profile.full_name || user.profile.first_name}`.trim() : firstName;
+  const firstName = user?.profile?.first_name || user?.email?.split('@')[0] || 'Artist';
+  const fullName  = user?.profile?.full_name?.trim() || firstName;
 
   useEffect(() => {
     Promise.allSettled([
@@ -378,6 +378,11 @@ const ArtistDashboard = () => {
               <Eye size={14} className="text-[#8B6914] shrink-0" />
               <h3 className="text-[13.5px] font-bold text-[#1A1A1A] truncate">Connections close to you</h3>
             </div>
+            <div className="text-center py-8">
+              <p className="text-[13px] font-semibold text-[#1A1A1A] mb-1">Coming soon</p>
+              <p className="text-[11.5px] text-[#888]">Connection suggestions are on the way.</p>
+            </div>
+            {/*
             {connections.length > 0
               ? connections.map(c => (
                   <ConnectionCard key={c.id} person={c} onConnect={handleConnect} connecting={connectingId === c.id} />
@@ -388,6 +393,7 @@ const ArtistDashboard = () => {
               className="text-[12px] font-semibold text-[#8B6914] hover:underline mt-3 w-full text-right block">
               See all
             </button>
+            */}
           </div>
         </div>
       </div>
