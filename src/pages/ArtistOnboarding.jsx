@@ -866,6 +866,14 @@ const Step6 = ({ onNext, onSkip }) => {
       </h2>
       <p className="text-[13.5px] text-[#888] mb-8 text-center">Select connections from the list to get started.</p>
       <div className="bg-white rounded-2xl border border-[#EBEBEB] p-8">
+        <div className="py-16 text-center">
+          <p className="text-[18px] font-semibold text-[#1A1A1A] mb-2">Coming soon</p>
+          <p className="text-[13px] text-[#888]">We're putting the finishing touches on connection suggestions. You can continue for now and we'll let you know when it's ready.</p>
+        </div>
+        <div className="flex items-center gap-4 pt-2">
+          <GoldBtn onClick={onSkip} className="flex-1 justify-center">Continue</GoldBtn>
+        </div>
+        {/*
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {MOCK_CONNECTIONS.map(c => (
             <div key={c.id} className="rounded-xl border border-[#EBEBEB] overflow-hidden hover:shadow-md transition-shadow">
@@ -896,6 +904,7 @@ const Step6 = ({ onNext, onSkip }) => {
           <GoldBtn onClick={onNext} className="flex-1 justify-center">Finish <ArrowRight size={15} /></GoldBtn>
           <GoldBtn onClick={onSkip} outline className="flex-1 justify-center">Skip</GoldBtn>
         </div>
+        */}
       </div>
     </>
   );

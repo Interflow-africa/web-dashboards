@@ -157,7 +157,7 @@ const DashboardLayout = ({ children }) => {
       </aside>
 
       {/* ── Main content area ── */}
-      <div className="flex-1 lg:ml-[220px] flex flex-col min-h-screen">
+      <div className="flex-1 min-w-0 lg:ml-[220px] flex flex-col min-h-screen">
 
         {/* Top bar */}
         <header className="bg-white h-[60px] lg:h-[68px] flex items-center px-4 lg:px-7 gap-3 lg:gap-5 sticky top-0 z-20 border-b border-[#EBEBEB]">

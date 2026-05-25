@@ -610,9 +610,9 @@ const FooterBtn = ({ children, onClick, outline = false }) => (
 
 /* ─── Footer ─────────────────────────────────────────────────────── */
 const CONTACT_ITEMS = [
-  { icon: 'location', text: '6, lorem ipsum sodike lissy imacun ehnti leren.' },
+  { icon: 'location', text: 'Plot 413, Lighthouse City Estate, Abuja' },
   { icon: 'email',    text: 'interflow@gmail.com' },
-  { icon: 'phone',    text: '+234-123-9471-143' },
+  { icon: 'phone',    text: '+234 708 009 8343' },
 ];
 
 const SOCIAL_ICONS = ['facebook', 'twitter', 'linkedin', 'instagram'];
