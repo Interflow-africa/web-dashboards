@@ -57,11 +57,13 @@ const EXPERIENCE_OPTIONS = [
 ];
 
 const SALARY_RANGE_OPTIONS = [
-  { label: 'None',         value: '' },
-  { label: 'Fixed Amount', value: 'fixed_amount' },
-  { label: 'Range',        value: 'range' },
-  { label: 'Competitive',  value: 'competitive' },
-  { label: 'Negotiable',   value: 'negotiable' },
+  { label: 'None',                      value: '' },
+  { label: '₦0 - ₦80,000',              value: '0_50' },
+  { label: '₦80,000 - ₦160,000',        value: '50_100' },
+  { label: '₦160,000 - ₦800,000',       value: '100_500' },
+  { label: '₦800,000 - ₦1,600,000',     value: '500_1000' },
+  { label: '₦1,600,000+',               value: '1000_plus' },
+  { label: 'Negotiable',                value: 'negotiable' },
 ];
 
 const PAYMENT_TYPE_OPTIONS = [
