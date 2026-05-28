@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import getApiError from "@/utils/apiError";
 import AuthSplitLayout from "@/components/layout/AuthSplitLayout";
 import FloatingInput from "@/components/common/FloatingInput";
+import InterflowLogo from "@/components/common/InterflowLogo";
 import { authAPI } from "@/services/index";
 import { useVerifyOTP } from "@/hooks/auth";
 import useAuthStore from "@/store/authStore";
@@ -200,9 +201,8 @@ const RolePicker = ({ onSelect }) => (
 
         <div className="relative z-10 w-full max-w-[420px]">
           {/* Logo */}
-          <img
-            src="/assets/icons/interflow-logo.svg"
-            alt="Interflow"
+          <InterflowLogo
+            variant="dark"
             style={{ height: 56, width: "auto", marginBottom: 36 }}
           />
 
@@ -457,9 +457,8 @@ const EmailConfirm = ({ email, onContinue }) => {
       <div className="confirm-overlay" />
 
       <div className="confirm-card">
-        <img
-          src="/assets/icons/interflow-logo.svg"
-          alt="Interflow"
+        <InterflowLogo
+          variant="dark"
           style={{ height: 52, width: "auto", margin: "0 auto 24px" }}
         />
 
@@ -549,9 +548,8 @@ const OTPVerify = ({ email }) => {
       <div className="confirm-overlay" />
 
       <div className="confirm-card">
-        <img
-          src="/assets/icons/interflow-logo.svg"
-          alt="Interflow"
+        <InterflowLogo
+          variant="dark"
           style={{ height: 52, width: "auto", margin: "0 auto 24px" }}
         />
 

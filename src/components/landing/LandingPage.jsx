@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowRight, Menu, X } from "lucide-react";
 import Icon from "@/components/common/Icon";
+import InterflowLogo from "@/components/common/InterflowLogo";
 import "./Landing.css";
 
 /* ─── Brand colours ────────────────────────────────────────────── */
@@ -86,11 +87,7 @@ const Navbar = () => {
         style={{ height: 72 }}
       >
         {/* Logo */}
-        <img
-          src="/assets/icons/interflow-logo.svg"
-          alt="Interflow"
-          style={{ height: 44, width: "auto" }}
-        />
+        <InterflowLogo variant="dark" style={{ height: 44, width: "auto" }} />
 
         {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-12">
@@ -443,31 +440,56 @@ const About = () => {
           className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center gap-8 md:gap-14"
           style={{ padding: "56px 24px" }}
         >
-          {/* Laptop image */}
+          {/* Laptop with screen content + floating logo badge */}
           <Reveal
             className="relative shrink-0 w-full md:w-auto"
             style={{ maxWidth: 520 }}
           >
-            <img
-              src="/assets/images/landing/about-laptop.png"
-              alt="Interflow platform on laptop"
-              className="w-full h-auto"
-              style={{ filter: "drop-shadow(0 24px 48px rgba(0,0,0,0.22))" }}
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-                const fb = e.currentTarget.nextElementSibling;
-                if (fb) fb.style.display = "flex";
-              }}
-            />
             <div
-              className="hidden w-full rounded-2xl items-center justify-center bg-[#d6ccbe]"
-              style={{ height: 320 }}
+              className="relative w-full"
+              style={{ filter: "drop-shadow(0 24px 48px rgba(0,0,0,0.22))" }}
             >
+              {/* Laptop frame (sets the aspect ratio) */}
               <img
-                src="/assets/icons/interflow-logo.svg"
-                alt="Interflow"
-                style={{ height: 48, width: "auto", opacity: 0.4 }}
+                src="/assets/images/landing/about-laptop.png"
+                alt=""
+                className="block w-full h-auto relative"
+                style={{ zIndex: 1 }}
               />
+
+              {/* Screen content – clipped to the laptop's display area */}
+              <img
+                src="/assets/images/landing/about-people.png"
+                alt="Artists collaborating"
+                className="absolute object-cover"
+                style={{
+                  top: "13.5%",
+                  left: "13.7%",
+                  right: "13.9%",
+                  width: "73%",
+                  height: "69%",
+                  zIndex: 2,
+                }}
+              />
+
+              {/* Floating Interflow logo badge */}
+              <div
+                className="absolute rounded-full bg-white flex items-center justify-center"
+                style={{
+                  top: "46%",
+                  left: "50%",
+                  width: "32%",
+                  aspectRatio: "1 / 1",
+                  transform: "translate(-50%, -50%)",
+                  boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
+                  zIndex: 3,
+                }}
+              >
+                <InterflowLogo
+                  variant="dark"
+                  style={{ width: "72%", height: "auto" }}
+                />
+              </div>
             </div>
           </Reveal>
 
@@ -768,6 +790,67 @@ const StatCard = ({ num, sup, label, sub }) => (
   </div>
 );
 
+const StatCarousel = ({ stats }) => {
+  const [index, setIndex] = useState(0);
+  const pausedRef = useRef(false);
+  const resumeTimerRef = useRef(null);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!pausedRef.current) setIndex((i) => (i + 1) % stats.length);
+    }, 4500);
+    return () => {
+      clearInterval(id);
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    };
+  }, [stats.length]);
+
+  const jumpTo = (i) => {
+    setIndex(i);
+    pausedRef.current = true;
+    if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
+    resumeTimerRef.current = setTimeout(() => {
+      pausedRef.current = false;
+    }, 8000);
+  };
+
+  return (
+    <div className="w-full max-w-[290px] mx-auto">
+      <div className="relative" style={{ height: 370 }}>
+        {stats.map((s, i) => (
+          <div
+            key={i}
+            className="absolute inset-0 transition-opacity duration-500 ease-out"
+            style={{
+              opacity: i === index ? 1 : 0,
+              pointerEvents: i === index ? "auto" : "none",
+            }}
+          >
+            <StatCard {...s} />
+          </div>
+        ))}
+      </div>
+
+      {/* Dots */}
+      <div className="flex justify-center gap-2 mt-5">
+        {stats.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => jumpTo(i)}
+            className="rounded-full transition-all duration-300"
+            style={{
+              width: i === index ? 24 : 8,
+              height: 8,
+              background: i === index ? GOLD : "#C4B49E",
+            }}
+            aria-label={`Show stat ${i + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const Stats = () => (
   <section
     id="stats"
@@ -821,20 +904,22 @@ const Stats = () => (
             className="hidden relative w-full rounded-2xl items-center justify-center bg-[#c8b89a]"
             style={{ height: 480, zIndex: 1 }}
           >
-            <img
-              src="/assets/icons/interflow-logo.svg"
-              alt="Interflow"
+            <InterflowLogo
+              variant="dark"
               style={{ height: 48, width: "auto", opacity: 0.4 }}
             />
           </div>
         </Reveal>
 
-        {/* Stat cards — 2×2 grid, responsive */}
+        {/* Stat cards — carousel on mobile, 2×2 grid from sm up */}
         <Reveal delay={200} className="w-full">
-          <div
-            className="grid gap-4 md:gap-5 justify-center md:justify-start"
-            style={{ gridTemplateColumns: "repeat(2, minmax(0, 290px))" }}
-          >
+          {/* Mobile: auto-rotating carousel */}
+          <div className="sm:hidden">
+            <StatCarousel stats={STATS} />
+          </div>
+
+          {/* sm+ : original 2×2 grid */}
+          <div className="hidden sm:grid sm:grid-cols-2 gap-4 md:gap-5 max-w-[600px]">
             {STATS.map((s, i) => (
               <StatCard key={i} {...s} />
             ))}
@@ -1005,7 +1090,7 @@ const Footer = () => {
               color: "rgba(255,255,255,0.55)",
             }}
           >
-            © Interflow 2025 , All Rights Reserved
+            © Interflow {new Date().getFullYear()} , All Rights Reserved
           </p>
           <div className="flex items-center" style={{ gap: 20 }}>
             {SOCIAL_ICONS.map((name) => (
