@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useForgotPassword } from '@/hooks/auth';
+import InterflowLogo from '@/components/common/InterflowLogo';
 import './Auth.css';
 
 /* ─── Brand ─────────────────────────────────────────────────────── */
@@ -67,11 +68,7 @@ const MailSentPage = () => {
 
         {/* Logo */}
         <div className="flex justify-center mb-6">
-          <img
-            src="/assets/icons/interflow-logo.svg"
-            alt="Interflow"
-            style={{ height: 40, width: 'auto' }}
-          />
+          <InterflowLogo variant="dark" style={{ height: 40, width: 'auto' }} />
         </div>
 
         {/* Mail icon */}

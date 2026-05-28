@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import { notificationsAPI } from '@/services/index';
+import InterflowLogo from '@/components/common/InterflowLogo';
 
 const ARTIST_NAV = [
   { label: 'Dashboard',       icon: LayoutDashboard, to: '/dashboard' },
@@ -171,9 +172,8 @@ const DashboardLayout = ({ children }) => {
           </button>
 
           {/* Logo */}
-          <img
-            src="/assets/icons/interflow-logo.svg"
-            alt="Interflow"
+          <InterflowLogo
+            variant="dark"
             className="hidden sm:block"
             style={{ height: 32, width: 'auto' }}
           />

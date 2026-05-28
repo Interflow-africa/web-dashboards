@@ -6,6 +6,7 @@ import { getCountries, getCountryCallingCode } from 'react-phone-number-input/ma
 import en from 'react-phone-number-input/locale/en.json';
 import { callForArtistsAPI } from '@/services/index';
 import getApiError from '@/utils/apiError';
+import InterflowLogo from '@/components/common/InterflowLogo';
 
 /* ─── Constants ────────────────────────────────────────────────── */
 const GOLD      = '#8D5D1D';
@@ -358,7 +359,7 @@ const CallForArtistsPage = () => {
 
       {/* ── Top Nav ── */}
       <header className="sticky top-0 z-30 bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between">
-        <img src="/assets/icons/interflow-logo.svg" alt="Interflow" style={{ height: 36, width: 'auto' }} />
+        <InterflowLogo variant="dark" style={{ height: 36, width: 'auto' }} />
         <Link to="/login" className="text-[13px] text-gray-500 hover:text-gray-800 transition-colors font-medium">
           Already have an account? <span className="text-[#8D5D1D] font-semibold">Sign In</span>
         </Link>
