@@ -1,5 +1,6 @@
 import React from 'react';
 import '../auth/Auth.css';
+import InterflowLogo from '../common/InterflowLogo';
 
 /**
  * AuthSplitLayout
@@ -36,11 +37,7 @@ const AuthSplitLayout = ({
 
         {/* Logo */}
         <div className="relative z-10 mb-8">
-          <img
-            src="/assets/icons/interflow-logo.svg"
-            alt="Interflow"
-            style={{ height: 48, width: 'auto' }}
-          />
+          <InterflowLogo variant="dark" style={{ height: 48, width: 'auto' }} />
         </div>
 
         {/* Content */}

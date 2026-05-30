@@ -5,6 +5,7 @@ import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
 import { orgAPI } from '@/services/index';
 import getApiError from '@/utils/apiError';
+import InterflowLogo from '@/components/common/InterflowLogo';
 
 /* ─── Decorative ring SVG (top-right of content area) ─────────────── */
 const RingDecoration = () => (
@@ -59,11 +60,7 @@ const Sidebar = ({ activeStep }) => (
   >
     {/* Logo */}
     <div className="mb-12">
-      <img
-        src="/assets/icons/interflow-logo.svg"
-        alt="Interflow"
-        style={{ height: 40, width: 'auto' }}
-      />
+      <InterflowLogo variant="light" style={{ height: 40, width: 'auto' }} />
     </div>
 
     {/* Steps */}
@@ -646,11 +643,7 @@ const OrgOnboarding = () => {
         className="w-full flex items-center px-8 border-b border-[#EBEBEB] shrink-0"
         style={{ height: 72, background: '#FFFFFF' }}
       >
-        <img
-          src="/assets/icons/interflow-logo.svg"
-          alt="Interflow"
-          style={{ height: 40, width: 'auto' }}
-        />
+        <InterflowLogo variant="dark" style={{ height: 40, width: 'auto' }} />
       </header>
 
       {/* ── Body: sidebar + content ── */}

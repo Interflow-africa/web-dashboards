@@ -49,26 +49,28 @@ const SKILLS_OPTIONS = [
 ];
 
 const EXPERIENCE_OPTIONS = [
-  { label: 'No minimum',   value: '' },
-  { label: 'Entry Level',  value: 'entry_level' },
-  { label: 'Intermediate', value: 'intermediate' },
-  { label: 'Senior',       value: 'senior' },
-  { label: 'Expert',       value: 'expert' },
+  { label: 'No minimum',  value: '' },
+  { label: '0 - 1 years', value: '0_1_years' },
+  { label: '1 - 4 years', value: '1_4_years' },
+  { label: '4 - 7 years', value: '4_7_years' },
+  { label: '7+ years',    value: '7_plus_years' },
 ];
 
 const SALARY_RANGE_OPTIONS = [
-  { label: 'None',         value: '' },
-  { label: 'Fixed Amount', value: 'fixed_amount' },
-  { label: 'Range',        value: 'range' },
-  { label: 'Competitive',  value: 'competitive' },
-  { label: 'Negotiable',   value: 'negotiable' },
+  { label: 'None',                      value: '' },
+  { label: '₦0 - ₦80,000',              value: '0_50' },
+  { label: '₦80,000 - ₦160,000',        value: '50_100' },
+  { label: '₦160,000 - ₦800,000',       value: '100_500' },
+  { label: '₦800,000 - ₦1,600,000',     value: '500_1000' },
+  { label: '₦1,600,000+',               value: '1000_plus' },
+  { label: 'Negotiable',                value: 'negotiable' },
 ];
 
 const PAYMENT_TYPE_OPTIONS = [
-  { label: 'Fixed',      value: 'fixed' },
-  { label: 'Hourly',     value: 'hourly' },
+  { label: 'Paid',       value: 'paid' },
+  { label: 'Unpaid',     value: 'unpaid' },
   { label: 'Negotiable', value: 'negotiable' },
-  { label: 'Volunteer',  value: 'volunteer' },
+  { label: 'Stipend',    value: 'stipend' },
 ];
 
 const WORK_ARRANGEMENT_OPTIONS = [
@@ -470,7 +472,7 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
     disciplines:             [],
     skills_required:         [],
     requires_experience:     '',
-    payment_type:            'fixed',
+    payment_type:            'paid',
     budget:                  '',
     currency:                'NGN',
     salary_range:            '',
@@ -480,15 +482,14 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
 
   const set = (k, v) => setForm(f => {
     const next = { ...f, [k]: v };
-    // When payment type switches to "volunteer", clear budget/salary fields.
-    if (k === 'payment_type' && v === 'volunteer') {
+    if (k === 'payment_type' && v === 'unpaid') {
       next.budget = '';
       next.salary_range = '';
     }
     return next;
   });
   const setE = (k) => (e) => set(k, e.target.value);
-  const isVolunteer = form.payment_type === 'volunteer';
+  const isUnpaid = form.payment_type === 'unpaid';
 
   const stepLabels = ['Details', 'Requirements', 'Preview & Post'];
 
@@ -543,7 +544,7 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
     if (!form.category)     { toast.error('Please select a category'); return; }
     setSubmitting(true);
     try {
-      const volunteer = form.payment_type === 'volunteer';
+      const unpaid = form.payment_type === 'unpaid';
       const payload = {
         category:                form.category,
         title:                   form.title,
@@ -564,9 +565,9 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
         ...(form.start_date            && { start_date:              form.start_date }),
         ...(form.end_date              && { end_date:                form.end_date }),
         ...(form.requires_experience   && { requires_experience:     form.requires_experience }),
-        ...(!volunteer && { currency: form.currency }),
-        ...(!volunteer && form.budget       && { budget:       form.budget }),
-        ...(!volunteer && form.salary_range && { salary_range: form.salary_range }),
+        ...(!unpaid && { currency: form.currency }),
+        ...(!unpaid && form.budget       && { budget:       form.budget }),
+        ...(!unpaid && form.salary_range && { salary_range: form.salary_range }),
       };
       await opportunitiesAPI.create(payload, form.publish_immediately);
       toast.success('Opportunity created!');
@@ -661,7 +662,7 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
               <Select lbl="Experience Required" field="requires_experience" options={EXPERIENCE_OPTIONS} placeholder="No minimum" />
               <Select lbl="Payment Type" field="payment_type" options={PAYMENT_TYPE_OPTIONS} />
             </div>
-            {!isVolunteer && (
+            {!isUnpaid && (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="col-span-2">
@@ -728,13 +729,13 @@ const CreateOpportunityModal = ({ onClose, onCreated }) => {
               <div><label className={labelCls}>End Date</label><div className={readonlyCls}>{form.end_date || '—'}</div></div>
               <div><label className={labelCls}>Application Close</label><div className={readonlyCls}>{form.opportunity_close_date || '—'}</div></div>
             </div>
-            <div className={isVolunteer ? '' : 'grid grid-cols-2 gap-3'}>
+            <div className={isUnpaid ? '' : 'grid grid-cols-2 gap-3'}>
               <div><label className={labelCls}>Payment Type</label><div className={readonlyCls}>{PAYMENT_TYPE_OPTIONS.find(p => p.value === form.payment_type)?.label}</div></div>
-              {!isVolunteer && (
+              {!isUnpaid && (
                 <div><label className={labelCls}>Currency</label><div className={readonlyCls}>{form.currency}</div></div>
               )}
             </div>
-            {!isVolunteer && form.budget && (
+            {!isUnpaid && form.budget && (
               <div><label className={labelCls}>Budget</label><div className={readonlyCls}>{form.currency} {Number(form.budget).toLocaleString()}</div></div>
             )}
             {form.disciplines.length > 0 && (
