@@ -591,7 +591,7 @@ const CallForArtistsPage = () => {
                 />
               </Field>
 
-              <Field label="Have you attended this event before?" error={errors.attended_before}>
+              <Field label="Have you attended this festival before?" error={errors.attended_before}>
                 <div className="mt-1">
                   <BoolToggle
                     value={form.attended_before}
@@ -602,7 +602,7 @@ const CallForArtistsPage = () => {
                 </div>
               </Field>
 
-              <Field label="Are you fully available for the entire programme?" error={errors.is_available}>
+              <Field label="Are you fully available for the entire festival?" error={errors.is_available}>
                 <div className="mt-1">
                   <BoolToggle
                     value={form.is_available}

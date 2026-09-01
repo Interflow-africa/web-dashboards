@@ -72,6 +72,8 @@ export const artistAPI = {
   getProfile: () => api.get('/artist/profile/'),
   getPublicProfile: (userId) => api.get(`/artist/profile/${userId}/`),
   uploadAvatar: (data) => api.post('/artist/profile/avatar/', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  // NOTE: requires a `cover_image` field on the artist profile model.
+  uploadCover: (data) => api.patch('/artist/me/', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   step1: (data) => api.post('/artist/onboarding/step1/', data),
   step2: (data) => api.post('/artist/onboarding/step2/', data),
   step3: (data) => api.post('/artist/onboarding/step3/', data),
