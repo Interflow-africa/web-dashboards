@@ -2,10 +2,67 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Eye, Briefcase, ChevronLeft, ChevronRight, Upload, ArrowRight } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
-import { dashboardAPI, connectionsAPI } from '@/services/api';
+import { dashboardAPI, connectionsAPI, applicationsAPI } from '@/services/api';
 import useAuthStore from '@/store/authStore';
 
 const BG_COLORS = ['#3B82F6','#10B981','#F59E0B','#8B5CF6','#EF4444','#06B6D4'];
+
+/* ── Application status presentation ── */
+const APP_STATUS = {
+  pending:      { label: 'Pending',     bg: '#FEF3C7', text: '#92400E' },
+  under_review: { label: 'In Review',   bg: '#DBEAFE', text: '#1E40AF' },
+  shortlisted:  { label: 'Shortlisted', bg: '#EDE9FE', text: '#5B21B6' },
+  accepted:     { label: 'Accepted',    bg: '#D1FAE5', text: '#065F46' },
+  rejected:     { label: 'Rejected',    bg: '#FEE2E2', text: '#991B1B' },
+  withdrawn:    { label: 'Withdrawn',   bg: '#F3F4F6', text: '#6B7280' },
+};
+
+const statusOf = (s) =>
+  APP_STATUS[s] || { label: (s || 'Pending').replace(/_/g, ' '), bg: '#F3F4F6', text: '#6B7280' };
+
+const fmtDate = (d) =>
+  d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+
+/* ── Applied opportunity row ── */
+const AppliedRow = ({ app, onView }) => {
+  const opp    = app.opportunity || {};
+  const title  = opp.title || app.opportunity_title || 'Opportunity';
+  const org    = opp.organization_name || app.organization_name || '';
+  const place  = [opp.city, opp.country].filter(Boolean).join(', ') || opp.location || '';
+  const status = statusOf(app.status);
+
+  return (
+    <div
+      onClick={() => onView(app)}
+      className="flex items-center gap-3 py-3 border-b border-[#F0F0F0] last:border-0 cursor-pointer hover:bg-[#FAFAFA] transition-colors -mx-2 px-2 rounded-lg"
+    >
+      <div
+        className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0"
+        style={{ background: BG_COLORS[(opp.id || app.id || 0) % BG_COLORS.length] }}
+      >
+        {(org || title).slice(0, 3).toUpperCase()}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">{title}</p>
+        <p className="text-[11.5px] text-[#888] truncate">
+          {[org, place].filter(Boolean).join(' · ') || '—'}
+        </p>
+        <p className="text-[11px] text-[#AAAAAA] mt-0.5">
+          Applied {fmtDate(app.created_at) || 'recently'}
+          {opp.opportunity_close_date ? ` · Closes ${fmtDate(opp.opportunity_close_date)}` : ''}
+        </p>
+      </div>
+
+      <span
+        className="text-[10.5px] font-bold px-2.5 py-1 rounded-full shrink-0 whitespace-nowrap"
+        style={{ background: status.bg, color: status.text }}
+      >
+        {status.label}
+      </span>
+    </div>
+  );
+};
 
 /* ── Stat card ── */
 const StatCard = ({ title, value, sub, icon: Icon, bgColor, iconBg }) => (
@@ -173,6 +230,8 @@ const ArtistDashboard = () => {
   const [activity, setActivity]     = useState([]);
   const [connections, setConnections] = useState([]);
   const [updates, setUpdates]       = useState([]);
+  const [applied, setApplied]       = useState([]);
+  const [appliedLoading, setAppliedLoading] = useState(true);
   const [tab, setTab]               = useState('updates');
   const [oppPage, setOppPage]       = useState(0);
   const [connectingId, setConnectingId] = useState(null);
@@ -217,6 +276,17 @@ const ArtistDashboard = () => {
         setUpdates(Array.isArray(d) ? d : (d.results || []));
       }
     });
+  }, []);
+
+  /* Opportunities this artist has applied for */
+  useEffect(() => {
+    applicationsAPI.myApplications()
+      .then(r => {
+        const d = r.data?.data || r.data || {};
+        setApplied(Array.isArray(d) ? d : (d.results || []));
+      })
+      .catch(() => setApplied([]))
+      .finally(() => setAppliedLoading(false));
   }, []);
 
   const handleConnect = (recipientId) => {
@@ -332,6 +402,52 @@ const ArtistDashboard = () => {
                   ))
               }
             </div>
+          </div>
+
+          {/* Active Opportunities — what the artist has applied for */}
+          <div className="bg-white rounded-2xl border border-[#EBEBEB] p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4 gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Briefcase size={15} className="text-[#8B6914] shrink-0" />
+                <h3 className="text-[14px] sm:text-[16px] font-bold text-[#1A1A1A] truncate">Active Opportunities</h3>
+                {!appliedLoading && applied.length > 0 && (
+                  <span className="text-[11px] font-semibold text-[#888] bg-[#F5F5F5] px-2 py-0.5 rounded-full shrink-0">
+                    {applied.length}
+                  </span>
+                )}
+              </div>
+              {applied.length > 0 && (
+                <button onClick={() => navigate('/applications')}
+                  className="text-[12px] font-semibold text-[#8B6914] hover:underline shrink-0">
+                  See all
+                </button>
+              )}
+            </div>
+
+            <p className="text-[12px] text-[#888] -mt-2 mb-3">Opportunities you've applied for and where each one stands.</p>
+
+            {appliedLoading ? (
+              <div className="flex flex-col gap-2">
+                {[1, 2, 3].map(i => <div key={i} className="bg-[#F9F9F9] rounded-xl h-[64px] animate-pulse" />)}
+              </div>
+            ) : applied.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-[13px] font-semibold text-[#1A1A1A] mb-1">No active applications yet</p>
+                <p className="text-[12px] text-[#888] mb-4">Apply to an opportunity and track its status here.</p>
+                <button onClick={() => navigate('/opportunities')}
+                  className="px-5 py-2 rounded-full bg-[#8B6914] text-white text-[12.5px] font-semibold hover:bg-[#7A5C12] transition-colors">
+                  Browse Opportunities
+                </button>
+              </div>
+            ) : (
+              applied
+                .slice()
+                .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+                .slice(0, 5)
+                .map(a => (
+                <AppliedRow key={a.id} app={a} onView={app => navigate(`/applications/${app.id}`)} />
+              ))
+            )}
           </div>
 
           {/* Updates / Industry news */}

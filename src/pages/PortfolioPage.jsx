@@ -4,6 +4,7 @@ import { X, ExternalLink, Trash2, Plus, Image, Pencil, GraduationCap, Briefcase,
 import DashboardLayout from '../components/common/DashboardLayout';
 import { artistAPI, relevantWorksAPI, authAPI } from '../services/api';
 import useAuthStore from '../store/authStore';
+import { readShareUrl, copyText } from '../utils/shareLink';
 import toast from 'react-hot-toast';
 
 const EMPTY_FORM = {
@@ -431,6 +432,10 @@ export const PortfolioPage = () => {
   /* experience modal state: null | { mode:'add' } | { mode:'edit', exp } */
   const [expModal, setExpModal]             = useState(null);
 
+  /* share link is prefetched so the copy can run inside the click gesture */
+  const [shareUrl, setShareUrl]             = useState('');
+  const [uploadingCover, setUploadingCover] = useState(false);
+
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
@@ -454,6 +459,62 @@ export const PortfolioPage = () => {
   };
 
   useEffect(() => { loadData(); }, []);
+
+  /* Prefetch the share link on mount. The copy button must be able to write to
+     the clipboard synchronously — fetching first would end the user-gesture
+     context and the browser would silently reject the write. */
+  useEffect(() => {
+    artistAPI.getShareLink()
+      .then(r => setShareUrl(readShareUrl(r)))
+      .catch(() => setShareUrl(''));
+  }, []);
+
+  const handleShare = async () => {
+    let url = shareUrl;
+
+    /* Link not back yet (or the first fetch failed) — fetch it now. The copy
+       may fall back to the legacy path since the gesture context is gone, and
+       if that fails too we surface the URL so it can be copied by hand. */
+    if (!url) {
+      try {
+        url = readShareUrl(await artistAPI.getShareLink());
+        setShareUrl(url);
+      } catch {
+        toast.error('Could not load your portfolio link. Please try again.');
+        return;
+      }
+    }
+
+    if (!url) {
+      toast.error('No portfolio link available yet.');
+      return;
+    }
+
+    if (await copyText(url)) {
+      toast.success('Portfolio link copied!');
+    } else {
+      toast.error(`Could not copy automatically. Your link: ${url}`, { duration: 10000 });
+    }
+  };
+
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const fd = new FormData();
+      fd.append('cover_image', file);
+      const r = await artistAPI.uploadCover(fd);
+      const cover = r.data?.data?.cover_image || r.data?.cover_image;
+      if (cover) setProfile(p => ({ ...p, cover_image: cover }));
+      toast.success('Cover photo updated!');
+    } catch {
+      toast.error('Failed to upload cover photo');
+    } finally {
+      setUploadingCover(false);
+      e.target.value = '';
+    }
+  };
 
   const handleDeleteWork = async (id) => {
     if (!window.confirm('Remove this work?')) return;
@@ -642,7 +703,14 @@ export const PortfolioPage = () => {
       <div style={{ maxWidth: '960px', width: '100%', overflow: 'hidden' }}>
         {/* Profile Header */}
         <div className="section-card" style={{ marginBottom: '20px', overflow: 'visible' }}>
-          <div style={{ height: '160px', background: 'linear-gradient(135deg, var(--dark) 0%, var(--dark-3) 100%)', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0', position: 'relative' }}>
+          <div style={{
+            height: '160px',
+            background: profile?.cover_image
+              ? `url(${profile.cover_image}) center / cover no-repeat`
+              : 'linear-gradient(135deg, var(--dark) 0%, var(--dark-3) 100%)',
+            borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
+            position: 'relative',
+          }}>
             <div style={{ position: 'absolute', bottom: '-40px', left: '28px', display: 'flex', alignItems: 'flex-end', gap: '16px' }}>
               <div style={{ width: '88px', height: '88px', borderRadius: '50%', background: 'var(--gold)', border: '4px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', fontWeight: '700', color: 'white', overflow: 'hidden' }}>
                 {profile?.avatar
@@ -651,6 +719,10 @@ export const PortfolioPage = () => {
               </div>
             </div>
             <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '8px' }}>
+              <label className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.15)', color: 'white', cursor: uploadingCover ? 'wait' : 'pointer', opacity: uploadingCover ? 0.6 : 1 }}>
+                <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingCover} onChange={handleCoverUpload} />
+                🖼 <span className="hidden sm:inline">{uploadingCover ? 'Uploading…' : 'Edit Cover'}</span>
+              </label>
               <label className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.15)', color: 'white', cursor: 'pointer' }}>
                 <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
                   const fd = new FormData();
@@ -680,16 +752,7 @@ export const PortfolioPage = () => {
                 )}
               </div>
               <div className="flex gap-2 flex-wrap">
-                <button className="btn btn-outline btn-sm" onClick={() =>
-                  artistAPI.getShareLink().then(r => {
-                    const apiUrl = r.data?.data?.share_url || '';
-                    const match  = apiUrl.match(/\/public\/([^/?#]+)\/?/);
-                    const token  = match?.[1];
-                    const url    = token ? `${window.location.origin}/portfolio/public/${token}/` : apiUrl;
-                    navigator.clipboard.writeText(url);
-                    toast.success('Portfolio link copied!');
-                  }).catch(() => toast.error('Failed'))
-                }>
+                <button className="btn btn-outline btn-sm" onClick={handleShare}>
                   🔗 Share Portfolio
                 </button>
                 <button
