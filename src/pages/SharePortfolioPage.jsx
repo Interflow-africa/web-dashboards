@@ -1,38 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import DashboardLayout from '../components/common/DashboardLayout';
 import { artistAPI } from '../services/api';
+import { readShareUrl, copyText } from '../utils/shareLink';
 import toast from 'react-hot-toast';
 
-// Extract the token from the API URL and return a frontend-hosted portfolio URL.
-// e.g. https://api.../artist/portfolio/public/{token}/ → http://localhost:5173/portfolio/public/{token}/
-const toFrontendUrl = (apiUrl) => {
-  if (!apiUrl) return '';
-  const match = apiUrl.match(/\/public\/([^/?#]+)\/?/);
-  const token = match?.[1];
-  return token ? `${window.location.origin}/portfolio/public/${token}/` : apiUrl;
-};
-
 const SharePortfolioPage = () => {
-  const [shareData, setShareData] = useState(null);
+  const [shareUrl, setShareUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     artistAPI.getShareLink()
-      .then(r => setShareData(r.data.data))
+      .then(r => setShareUrl(readShareUrl(r)))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const shareUrl = toFrontendUrl(shareData?.share_url);
-
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!shareUrl) return;
-    navigator.clipboard.writeText(shareUrl).then(() => {
+    if (await copyText(shareUrl)) {
       setCopied(true);
       toast.success('Portfolio link copied!');
       setTimeout(() => setCopied(false), 3000);
-    });
+    } else {
+      toast.error(`Could not copy automatically. Your link: ${shareUrl}`, { duration: 10000 });
+    }
   };
 
   const shareOptions = [

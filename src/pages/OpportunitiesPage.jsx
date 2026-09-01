@@ -93,7 +93,7 @@ const OppCard = ({ opp, onMoreInfo, onApply }) => {
       <div className="flex items-start gap-3">
         <OrgLogo opp={opp} size={48} fontSize={13} />
         <div className="min-w-0">
-          <p className="font-bold text-[14px] text-gray-900 truncate leading-snug">{name}</p>
+          <p className="font-bold text-[14px] text-gray-900 truncate leading-snug">{opp.organization_name || opp.title}</p>
           <p className="text-[12px] text-gray-400 truncate">{[opp.city, opp.country].filter(Boolean).join(', ') || opp.location || 'Location TBD'}</p>
           <p className="text-[12px] text-gray-500">{opp.title?.replace(/_/g, ' ')}</p>
         </div>
