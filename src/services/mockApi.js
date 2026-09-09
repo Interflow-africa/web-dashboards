@@ -341,3 +341,95 @@ export const mockRelevantWorksAPI = {
 export const mockOnboardingAPI = {
   async getStatus() { await DELAY(300); return ok({ step: 1, completed: false }); },
 };
+
+/* ─── Mock Events & Ticketing API ─────────────────────────────────
+   Lets the public event page + purchase flow be exercised end-to-end
+   before the backend exists. Set VITE_USE_MOCK=true to activate.
+   ───────────────────────────────────────────────────────────────── */
+const mockEvent = {
+  slug: 'slum-party-2026',
+  name: 'Slum Party 2026',
+  description:
+    'A one-night celebration of Lagos street culture — live performance, dance and sound from across the continent. Doors open 6pm.',
+  image: '/assets/images/landing/hero-1.png',
+  category: 'Festival',
+  venue_name: 'Muri Okunola Park',
+  address: 'Victoria Island',
+  city: 'Lagos',
+  country: 'Nigeria',
+  start_date: '2026-09-27',
+  start_time: '18:00',
+  end_date: '2026-09-27',
+  end_time: '23:59',
+  status: 'published',
+  organisation_name: 'Slum Party',
+  programme: 'Ayra Starr · Odumodublvck · Tems · Asake · DJ Spinall',
+  ticket_types: [
+    { id: 1, name: 'Early Bird', description: 'Limited release.',        price: 7500,  currency: 'NGN', quantity: 100, sold: 100, remaining: 0,   max_per_order: 5, sales_end_date: '2026-09-10', is_active: true },
+    { id: 2, name: 'Regular',    description: 'General admission.',      price: 10000, currency: 'NGN', quantity: 500, sold: 342, remaining: 158, max_per_order: 5, sales_end_date: null,         is_active: true },
+    { id: 3, name: 'VIP',        description: 'Front section + lounge.', price: 25000, currency: 'NGN', quantity: 100, sold: 72,  remaining: 28,  max_per_order: 4, sales_end_date: null,         is_active: true },
+  ],
+};
+
+let mockOrderSeq = 239;
+const mockOrders = {};
+
+export const mockEventsAPI = {
+  async detail(slug) {
+    await DELAY(500);
+    if (slug !== mockEvent.slug) throw err('Event not found.', 404);
+    return ok(mockEvent);
+  },
+
+  async createOrder(slug, data) {
+    await DELAY(700);
+    const type = mockEvent.ticket_types.find(t => t.id === Number(data.ticket_type));
+    if (!type) throw err('Ticket type not found.', 404);
+    if (type.remaining < data.quantity) throw err('Not enough tickets remaining.', 409);
+
+    const reference = `INT-${String(++mockOrderSeq).padStart(6, '0')}`;
+    mockOrders[reference] = {
+      order_reference: reference,
+      event_name: mockEvent.name,
+      event_date: mockEvent.start_date,
+      venue_name: mockEvent.venue_name,
+      city: mockEvent.city,
+      ticket_type_name: type.name,
+      quantity: data.quantity,
+      amount: type.price * data.quantity,
+      currency: type.currency,
+      customer_name: data.full_name,
+      customer_email: data.email,
+      payment_status: 'pending',
+      tickets: [],
+      _polls: 0,
+    };
+
+    /* Real Paystack returns a checkout URL. In mock we bounce straight back
+       to the confirmation route so the flow stays clickable offline. */
+    return ok({
+      order_reference: reference,
+      authorization_url: `${window.location.origin}/events/order/${reference}`,
+    });
+  },
+
+  async orderStatus(reference) {
+    await DELAY(600);
+    const order = mockOrders[reference];
+    if (!order) throw err('Order not found.', 404);
+
+    /* Simulate the webhook landing a couple of polls in. */
+    order._polls += 1;
+    if (order._polls >= 2 && order.payment_status === 'pending') {
+      order.payment_status = 'successful';
+      order.tickets = Array.from({ length: order.quantity }, (_, i) => ({
+        ticket_id: `INT-TKT-${reference.slice(4)}-${i + 1}`,
+        attendee_name: order.customer_name,
+        ticket_type_name: order.ticket_type_name,
+        status: 'valid',
+        qr_image_url: null,
+      }));
+    }
+    return ok(order);
+  },
+};
