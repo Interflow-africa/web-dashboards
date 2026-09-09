@@ -219,6 +219,22 @@ export const orgFormsAPI = {
   updateSubmission: (subId, data) => api.patch(`/interflow_form/manage/submissions/${subId}/`, data),
 };
 
+// ─── Events & Ticketing ───────────────────────────────────────────
+/*  Public endpoints — no auth required. Ticket issuance is driven by the
+    Paystack webhook on the backend, never by the browser: createOrder only
+    creates a PENDING order and hands back a Paystack authorization_url.
+    The confirmation page then polls orderStatus until the webhook lands.  */
+export const eventsAPI = {
+  /** Published event + its purchasable ticket types. */
+  detail: (slug) => api.get(`/events/${slug}/`),
+
+  /** Create a pending order → { order_reference, authorization_url }. */
+  createOrder: (slug, data) => api.post(`/events/${slug}/orders/`, data),
+
+  /** Poll after returning from Paystack → payment_status + issued tickets. */
+  orderStatus: (reference) => api.get(`/events/orders/${reference}/`),
+};
+
 // ─── Call For Artists (always public — no auth header needed) ──────
 export const callForArtistsAPI = {
   getForm: (slug) => api.get(`/interflow_form/forms/${slug}/`),

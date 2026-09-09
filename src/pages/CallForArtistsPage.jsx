@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowRight, Upload, Link2, Check } from 'lucide-react';
+import { ArrowRight, Upload, Link2, Check, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getCountries, getCountryCallingCode } from 'react-phone-number-input/max';
 import en from 'react-phone-number-input/locale/en.json';
@@ -399,6 +399,16 @@ const CallForArtistsPage = () => {
       <form onSubmit={handleSubmit} noValidate>
         <div className="max-w-[720px] mx-auto px-4 py-8 flex flex-col gap-6">
 
+          {/* Participation terms — surfaced up front so applicants see the
+              travel/accommodation obligation before filling the form in. */}
+          <div className="flex items-start gap-3 p-4 rounded-2xl border border-[#D4A84B]/30 bg-[#FFF8EC]">
+            <Info size={17} className="shrink-0 mt-0.5" style={{ color: '#8D5D1D' }} />
+            <p className="text-[13px] text-[#5C3D0E] leading-relaxed">
+              <span className="font-semibold">Please note:</span>{' '}
+              Selected artists are responsible for their travel arrangements and accommodation.
+            </p>
+          </div>
+
           {/* ── Section A: Personal Information ── */}
           <SectionCard num="A" title="Personal Information">
             {/* Headshot */}
@@ -651,6 +661,7 @@ const CallForArtistsPage = () => {
                 <p className="font-semibold">By submitting this application you confirm and consent to the following:</p>
                 <ul className="list-disc list-inside space-y-1 text-[12.5px]">
                   <li>All information provided in this form is accurate and truthful.</li>
+                  <li>Selected artists are <strong>responsible for their travel arrangements and accommodation</strong>.</li>
                   <li>Interflow will use your submitted details — including your name, contact information, discipline, and portfolio work — to <strong>create an artist profile on your behalf</strong> on the Interflow platform.</li>
                   <li>You will receive an activation email to set your password and gain full access to your new Interflow account.</li>
                   <li>Your profile may be visible to participating organisations on the platform in line with the opportunity you are applying for.</li>

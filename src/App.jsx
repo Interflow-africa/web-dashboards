@@ -31,6 +31,8 @@ const OrgFormsPage                = lazy(() => import('@/pages/OrgFormsPage'));
 const ViewApplicationInfoPage     = lazy(() => import('@/pages/ViewApplicationInfoPage'));
 const CallForArtistsPage          = lazy(() => import('@/pages/CallForArtistsPage'));
 const ActivateAccountPage         = lazy(() => import('@/pages/ActivateAccountPage'));
+const EventPage                   = lazy(() => import('@/pages/EventPage'));
+const OrderConfirmationPage       = lazy(() => import('@/pages/OrderConfirmationPage'));
 
 const PrivateRoute = ({ children }) => {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
@@ -66,6 +68,11 @@ function App() {
           <Route path="/portfolio/public/:token" element={<PublicPortfolioPage />} />
           <Route path="/apply/:slug" element={<CallForArtistsPage />} />
           <Route path="/activate/:token" element={<ActivateAccountPage />} />
+          {/* Events & Ticketing — public, no auth (attendees are not users) */}
+          <Route path="/events/:slug" element={<EventPage />} />
+          <Route path="/events/order/:reference" element={<OrderConfirmationPage />} />
+          {/* Paystack can also return to a bare callback with ?reference= */}
+          <Route path="/events/order" element={<OrderConfirmationPage />} />
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
