@@ -522,6 +522,76 @@ export const mockEventsAPI = {
     });
   },
 
+  /* ── Organisation-scoped (mock) ──────────────────────────────── */
+  async orgEvents() {
+    await DELAY(500);
+    return ok([{
+      id: mockEvent.id,
+      name: mockEvent.name,
+      slug: mockEvent.slug,
+      image: mockEvent.image,
+      status: mockEvent.status,
+      status_display: 'Published',
+      venue_name: mockEvent.venue_name,
+      city: mockEvent.city,
+      start_at: mockEvent.start_at,
+      sales: {
+        tickets_total: 726, tickets_sold: 342, tickets_remaining: 384,
+        checked_in: 0, orders_paid: 180, orders_needing_refund: 0,
+        gross_sales: '4850000.00', refunded_sales: '0.00',
+        net_settlement: '4850000.00', buyer_charged: '4923410.00',
+        service_fee: '68600.00', vat: '5145.00',
+        payment_processing_fee: '0.00', refunds_paid_out: '0.00',
+      },
+    }]);
+  },
+
+  async orgSales(id) {
+    await DELAY(600);
+    if (id !== mockEvent.id) throw err('Event not found.', 404);
+    return ok({
+      event: {
+        id: mockEvent.id, name: mockEvent.name, slug: mockEvent.slug,
+        status: mockEvent.status, start_at: mockEvent.start_at,
+        venue_name: mockEvent.venue_name, city: mockEvent.city,
+      },
+      sales: {
+        tickets_total: 726, tickets_sold: 342, tickets_remaining: 384,
+        checked_in: 0, orders_paid: 180, orders_needing_refund: 0,
+        gross_sales: '4850000.00', refunded_sales: '0.00',
+        net_settlement: '4850000.00', buyer_charged: '4923410.00',
+        service_fee: '68600.00', vat: '5145.00',
+        payment_processing_fee: '0.00', refunds_paid_out: '0.00',
+      },
+      ticket_types: mockEvent.ticket_types.map((t, i) => ({
+        id: t.id, name: t.name, price: t.price,
+        quantity_total: t.quantity_available + [100, 342, 72, 0][i],
+        sold: [100, 342, 72, 0][i], held: i === 1 ? 2 : 0,
+        remaining: t.remaining, checked_in: 0,
+        revenue: money(Number(t.price) * [100, 342, 72, 0][i]),
+        is_active: t.is_active, is_sold_out: t.is_sold_out,
+      })),
+    });
+  },
+
+  async orgAttendees(id) {
+    await DELAY(600);
+    if (id !== mockEvent.id) throw err('Event not found.', 404);
+    const names = ['John Doe', 'Amaka Obi', 'Tunde Bakare', 'Zainab Yusuf', 'Chidi Eze'];
+    return ok({
+      checked_in: { tickets_sold: 342, checked_in: 2, not_yet_arrived: 340 },
+      attendees: names.map((n, i) => ({
+        ticket_id: `INT-TKT-0002${39 + i}`,
+        attendee_name: n,
+        ticket_type_name: i % 3 === 0 ? 'VIP' : 'Regular',
+        status: 'valid',
+        checked_in: i < 2,
+        checked_in_at: i < 2 ? '2026-09-27T18:42:00Z' : null,
+        order_reference: `INT-0002${39 + i}`,
+      })),
+    });
+  },
+
   async orderStatus(reference) {
     await DELAY(600);
     const order = mockOrders[reference];

@@ -239,6 +239,15 @@ export const eventsAPI = {
 
   /** Poll after returning from Paystack → payment_status + issued tickets. */
   orderStatus: (reference) => api.get(`/events/orders/${reference}/`),
+
+  /* ── Organisation-scoped, read-only (org bearer) ──────────────────
+     Already scoped server-side: another org gets 404, an artist 403.
+     Attendee rows deliberately carry no buyer email/phone — organisers
+     get what they need to work the door, contact details stay with
+     INTERFLOW admin. Don't build UI that expects them. */
+  orgEvents:    ()   => api.get('/events/organization/events/'),
+  orgSales:     (id) => api.get(`/events/organization/events/${id}/sales/`),
+  orgAttendees: (id) => api.get(`/events/organization/events/${id}/attendees/`),
 };
 
 // ─── Call For Artists (always public — no auth header needed) ──────
