@@ -2,6 +2,7 @@ import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import useAuthStore from '@/store/authStore';
+import { homeFor } from '@/utils/homeFor';
 
 import LandingPage        from '@/components/landing/LandingPage';
 import LoginPage          from '@/components/auth/LoginPage';
@@ -30,6 +31,7 @@ const OrgProfilePage              = lazy(() => import('@/pages/OrgProfilePage'))
 const OrgFormsPage                = lazy(() => import('@/pages/OrgFormsPage'));
 const OrgEventsPage               = lazy(() => import('@/pages/OrgEventsPage'));
 const OrgEventDetailPage          = lazy(() => import('@/pages/OrgEventDetailPage'));
+const CheckInPage                 = lazy(() => import('@/pages/CheckInPage'));
 const ViewApplicationInfoPage     = lazy(() => import('@/pages/ViewApplicationInfoPage'));
 const CallForArtistsPage          = lazy(() => import('@/pages/CallForArtistsPage'));
 const ActivateAccountPage         = lazy(() => import('@/pages/ActivateAccountPage'));
@@ -44,10 +46,7 @@ const PrivateRoute = ({ children }) => {
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return children;
-  if (!user?.is_onboarded) {
-    return <Navigate to={user?.role === 'artist' ? '/onboarding/artist' : '/onboarding/organization'} replace />;
-  }
-  return <Navigate to={user?.role === 'artist' ? '/dashboard' : '/org/dashboard'} replace />;
+  return <Navigate to={homeFor(user)} replace />;
 };
 
 const PageLoader = () => (
@@ -98,6 +97,9 @@ function App() {
           <Route path="/org/forms" element={<PrivateRoute><OrgFormsPage /></PrivateRoute>} />
           <Route path="/org/events" element={<PrivateRoute><OrgEventsPage /></PrivateRoute>} />
           <Route path="/org/events/:id" element={<PrivateRoute><OrgEventDetailPage /></PrivateRoute>} />
+          {/* Door check-in. Gated on being signed in only — staff accounts
+              carry a blank role, so this must never branch on role. */}
+          <Route path="/check-in" element={<PrivateRoute><CheckInPage /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
           <Route path="/support" element={<PrivateRoute><SupportPage /></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />

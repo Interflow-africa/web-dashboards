@@ -225,6 +225,9 @@ export const orgFormsAPI = {
     creates a PENDING order and hands back a Paystack authorization_url.
     The confirmation page then polls orderStatus until the webhook lands.  */
 export const eventsAPI = {
+  /** Published events. Filters: { city, category }. */
+  list: (params) => api.get('/events/', { params }),
+
   /** Published event + its purchasable ticket types. */
   detail: (slug) => api.get(`/events/${slug}/`),
 
@@ -248,6 +251,15 @@ export const eventsAPI = {
   orgEvents:    ()   => api.get('/events/organization/events/'),
   orgSales:     (id) => api.get(`/events/organization/events/${id}/sales/`),
   orgAttendees: (id) => api.get(`/events/organization/events/${id}/attendees/`),
+
+  /* ── Door check-in (staff bearer) ─────────────────────────────────
+     Outcomes are carried by HTTP status, not just the body:
+       200 valid · 409 already used · 404 not a ticket
+       400 cancelled / refunded / wrong event (read `message`)
+     Every response carries fresh `stats`, so the counters update
+     without a second request. */
+  checkIn:      (data)    => api.post('/events/check-in/', data),
+  checkInStats: (eventId) => api.get(`/events/${eventId}/check-in/stats/`),
 };
 
 // ─── Call For Artists (always public — no auth header needed) ──────

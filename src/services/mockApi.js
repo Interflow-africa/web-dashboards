@@ -445,6 +445,9 @@ const mockEvent = {
 let mockOrderSeq = 239;
 const mockOrders = {};
 
+/* Door state for the mock scanner — survives for the page session. */
+const mockDoor = { sold: 342, checkedIn: 2, seen: {} };
+
 const issueTickets = (order) =>
   Array.from({ length: order.quantity }, (_, i) => ({
     ticket_id: `INT-TKT-${order.order_reference.slice(4)}-${i + 1}`,
@@ -519,6 +522,76 @@ export const mockEventsAPI = {
       vat: order.vat,
       payment_fee: order.payment_fee,
       authorization_url: free ? '' : `${window.location.origin}/events/order/${reference}`,
+    });
+  },
+
+  async list() {
+    await DELAY(400);
+    return ok([{
+      id: mockEvent.id, name: mockEvent.name, slug: mockEvent.slug,
+      image: mockEvent.image, category: mockEvent.category,
+      category_display: mockEvent.category_display,
+      organization_name: mockEvent.organization_name,
+      venue_name: mockEvent.venue_name, city: mockEvent.city,
+      country: mockEvent.country, start_at: mockEvent.start_at,
+      end_at: mockEvent.end_at, start_date: mockEvent.start_date,
+      start_time: mockEvent.start_time, price_from: 0, is_sold_out: false,
+    }]);
+  },
+
+  /* ── Door check-in (mock) ─────────────────────────────────────────
+     Deterministic by token prefix so every outcome is reachable offline:
+       used-*  -> 409   bad-*  -> 404   void-* -> 400   anything else 200
+     A repeat scan of the same token flips to 409, which is what makes
+     the debounce testable without a live event. */
+  async checkIn(data) {
+    await DELAY(450);
+    const token = String(data?.qr_token || '');
+    if (!token) throw err('No ticket code supplied.', 400);
+
+    const bump = (extra) => ({
+      tickets_sold: mockDoor.sold,
+      checked_in: mockDoor.checkedIn,
+      not_yet_arrived: Math.max(0, mockDoor.sold - mockDoor.checkedIn),
+      ...extra,
+    });
+
+    if (token.startsWith('bad-')) throw err('Ticket not found.', 404);
+    if (token.startsWith('void-')) throw err('This ticket was refunded and is no longer valid.', 400);
+
+    if (token.startsWith('used-') || mockDoor.seen[token]) {
+      const e = err('This ticket has already been used.', 409);
+      e.response.data.data = {
+        result: 'already_used',
+        ticket: {
+          ticket_id: `INT-TKT-${token.slice(-6).toUpperCase()}`,
+          attendee_name: 'John Doe', ticket_type_name: 'Regular',
+          status: 'used', checked_in_at: mockDoor.seen[token] || '2026-09-27T18:42:00Z',
+        },
+        stats: bump(),
+      };
+      throw e;
+    }
+
+    mockDoor.seen[token] = new Date().toISOString();
+    mockDoor.checkedIn += 1;
+    return ok({
+      result: 'valid',
+      ticket: {
+        ticket_id: `INT-TKT-${token.slice(-6).toUpperCase()}`,
+        attendee_name: 'Amaka Obi', ticket_type_name: 'VIP',
+        status: 'used', checked_in_at: mockDoor.seen[token],
+      },
+      stats: bump(),
+    });
+  },
+
+  async checkInStats() {
+    await DELAY(300);
+    return ok({
+      tickets_sold: mockDoor.sold,
+      checked_in: mockDoor.checkedIn,
+      not_yet_arrived: Math.max(0, mockDoor.sold - mockDoor.checkedIn),
     });
   },
 
