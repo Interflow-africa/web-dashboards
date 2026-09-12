@@ -6,6 +6,7 @@ import { getCountries, getCountryCallingCode } from 'react-phone-number-input/ma
 import en from 'react-phone-number-input/locale/en.json';
 import { callForArtistsAPI } from '@/services/index';
 import getApiError from '@/utils/apiError';
+import { imageUrl } from '@/utils/imageUrl';
 import InterflowLogo from '@/components/common/InterflowLogo';
 
 /* ─── Constants ────────────────────────────────────────────────── */
@@ -349,6 +350,7 @@ const CallForArtistsPage = () => {
     return <SuccessScreen email={form.email} onLogin={() => navigate('/login')} />;
   }
 
+  const cover    = imageUrl(formMeta.cover_image);
   const subField = SUB_FIELDS[form.primary_discipline];
   const fmtClose = formMeta.closes_at
     ? new Date(formMeta.closes_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -367,16 +369,21 @@ const CallForArtistsPage = () => {
 
       {/* ── Hero ── */}
       <div className="relative overflow-hidden"
-        style={{
-          background: formMeta.cover_image
-            ? `linear-gradient(to bottom, rgba(13,13,13,0.55) 0%, rgba(13,13,13,0.85) 100%)`
-            : 'linear-gradient(135deg, #0D0D0D 0%, #1a1208 60%, #0D0D0D 100%)',
-          minHeight: 240,
-        }}>
-        {formMeta.cover_image && (
-          <img src={formMeta.cover_image} alt=""
-            className="absolute inset-0 w-full h-full object-cover -z-10 opacity-50" />
+        style={{ minHeight: 240, background: '#0D0D0D' }}>
+        {/* Image, scrim and content as explicit sibling layers. A negative
+            z-index here pushed the cover behind the page's own background
+            instead of behind the scrim, hiding it completely. */}
+        {cover && (
+          <img src={cover} alt="" aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ opacity: 0.5 }}
+            onError={e => { e.currentTarget.style.display = 'none'; }} />
         )}
+        <div className="absolute inset-0" aria-hidden="true" style={{
+          background: cover
+            ? 'linear-gradient(to bottom, rgba(13,13,13,0.55) 0%, rgba(13,13,13,0.85) 100%)'
+            : 'linear-gradient(135deg, #0D0D0D 0%, #1a1208 60%, #0D0D0D 100%)',
+        }} />
         <div className="relative z-10 max-w-[720px] mx-auto px-6 py-12 pb-10">
           <p className="text-[#D4A84B] text-[12px] font-bold uppercase tracking-[0.15em] mb-3">Call for Artists</p>
           <h1 className="text-white font-bold leading-tight mb-3"
