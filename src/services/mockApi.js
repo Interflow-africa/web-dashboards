@@ -343,36 +343,116 @@ export const mockOnboardingAPI = {
 };
 
 /* ─── Mock Events & Ticketing API ─────────────────────────────────
-   Lets the public event page + purchase flow be exercised end-to-end
-   before the backend exists. Set VITE_USE_MOCK=true to activate.
+   Mirrors the live contract: UUID ticket ids, money as STRINGS,
+   `on_sale` / `is_sold_out` booleans, `category_display`,
+   `organization_name` (with a z). Set VITE_USE_MOCK=true to activate.
    ───────────────────────────────────────────────────────────────── */
+
+const round2 = (n) => Math.round(n * 100) / 100;
+const money  = (n) => round2(n).toFixed(2);
+
+/* Reproduces the backend's fee model. Paystack is billed on the total
+   collected, so the fee is grossed up: total = (base + flat) / (1 - rate).
+   These constants mirror dev config — the real values come from the API. */
+const SERVICE_FEE_PER_TICKET = 200;
+const VAT_RATE               = 0.075;
+const PAYSTACK_RATE          = 0.015;
+const PAYSTACK_FLAT          = 100;
+const PAYSTACK_FLAT_WAIVER   = 2500;
+const PAYSTACK_FEE_CAP       = 2000;
+
+const priceBasket = (type, quantity) => {
+  const subtotal    = Number(type.price) * quantity;
+  const service_fee = type.is_free ? 0 : SERVICE_FEE_PER_TICKET * quantity;
+  const vat         = round2(service_fee * VAT_RATE);
+  const base        = round2(subtotal + service_fee + vat);
+
+  /* Rounded UP to the next kobo — a processor fee can't be under-collected.
+     Verified against the live API: 6000x2 -> 199.45, 100000x1 -> 1627.64,
+     5000x1 -> 180.94. Rounding to nearest lands a kobo low on the first. */
+  let payment_fee = 0;
+  if (base > 0) {
+    const flat  = base < PAYSTACK_FLAT_WAIVER ? 0 : PAYSTACK_FLAT;
+    const gross = (base + flat) / (1 - PAYSTACK_RATE);
+    payment_fee = Math.min(Math.ceil((gross - base) * 100) / 100, PAYSTACK_FEE_CAP);
+  }
+
+  return {
+    currency: type.currency,
+    ticket_count: quantity,
+    lines: [{
+      ticket_type: type.id, name: type.name, quantity,
+      unit_price: money(Number(type.price)),
+      line_total: money(subtotal),
+      remaining: type.remaining - quantity,
+    }],
+    subtotal:    money(subtotal),
+    service_fee: money(service_fee),
+    vat:         money(vat),
+    payment_fee: money(payment_fee),
+    total:       money(base + payment_fee),
+  };
+};
+
 const mockEvent = {
+  id: '27b0497c-29d2-4c31-8045-4bb1f5b56691',
   slug: 'slum-party-2026',
   name: 'Slum Party 2026',
   description:
     'A one-night celebration of Lagos street culture — live performance, dance and sound from across the continent. Doors open 6pm.',
   image: '/assets/images/landing/hero-1.png',
-  category: 'Festival',
+  category: 'party',
+  category_display: 'Party / Social',
   venue_name: 'Muri Okunola Park',
   address: 'Victoria Island',
   city: 'Lagos',
   country: 'Nigeria',
+  start_at: '2026-09-27T18:00:00Z',
+  end_at:   '2026-09-27T23:59:00Z',
   start_date: '2026-09-27',
   start_time: '18:00',
-  end_date: '2026-09-27',
-  end_time: '23:59',
   status: 'published',
-  organisation_name: 'Slum Party',
+  organization_name: 'Slum Party',
   programme: 'Ayra Starr · Odumodublvck · Tems · Asake · DJ Spinall',
+  google_maps_url: '',
+  price_from: 0,
+  is_sold_out: false,
   ticket_types: [
-    { id: 1, name: 'Early Bird', description: 'Limited release.',        price: 7500,  currency: 'NGN', quantity: 100, sold: 100, remaining: 0,   max_per_order: 5, sales_end_date: '2026-09-10', is_active: true },
-    { id: 2, name: 'Regular',    description: 'General admission.',      price: 10000, currency: 'NGN', quantity: 500, sold: 342, remaining: 158, max_per_order: 5, sales_end_date: null,         is_active: true },
-    { id: 3, name: 'VIP',        description: 'Front section + lounge.', price: 25000, currency: 'NGN', quantity: 100, sold: 72,  remaining: 28,  max_per_order: 4, sales_end_date: null,         is_active: true },
+    { id: 'b1f0a3d2-0000-4000-8000-000000000001', name: 'Early Bird', description: 'Limited release.',
+      price: '7500.00',  currency: 'NGN', quantity_available: 0,   remaining: 0,
+      is_sold_out: true,  on_sale: false, is_active: true,  max_per_order: 5,
+      sales_start_at: '2026-08-01T00:00:00Z', sales_end_at: '2026-09-10T18:00:00Z',
+      sales_start_date: '2026-08-01T00:00:00Z', sales_end_date: '2026-09-10T18:00:00Z' },
+
+    { id: 'b1f0a3d2-0000-4000-8000-000000000002', name: 'Regular', description: 'General admission.',
+      price: '10000.00', currency: 'NGN', quantity_available: 158, remaining: 158,
+      is_sold_out: false, on_sale: true,  is_active: true,  max_per_order: 5,
+      sales_start_at: null, sales_end_at: null, sales_start_date: null, sales_end_date: null },
+
+    { id: 'b1f0a3d2-0000-4000-8000-000000000003', name: 'VIP', description: 'Front section + lounge.',
+      price: '25000.00', currency: 'NGN', quantity_available: 28,  remaining: 28,
+      is_sold_out: false, on_sale: true,  is_active: true,  max_per_order: 4,
+      sales_start_at: null, sales_end_at: null, sales_start_date: null, sales_end_date: null },
+
+    /* Exercises the ₦0 path: no fees, no Paystack, issued immediately. */
+    { id: 'b1f0a3d2-0000-4000-8000-000000000004', name: 'Community Guest', description: 'Free entry, limited.',
+      price: '0.00',     currency: 'NGN', quantity_available: 40,  remaining: 40,
+      is_sold_out: false, on_sale: true,  is_active: true,  max_per_order: 2, is_free: true,
+      sales_start_at: null, sales_end_at: null, sales_start_date: null, sales_end_date: null },
   ],
 };
 
 let mockOrderSeq = 239;
 const mockOrders = {};
+
+const issueTickets = (order) =>
+  Array.from({ length: order.quantity }, (_, i) => ({
+    ticket_id: `INT-TKT-${order.order_reference.slice(4)}-${i + 1}`,
+    attendee_name: order.customer_name,
+    ticket_type_name: order.ticket_type_name,
+    status: 'valid',
+    qr_image_url: null,
+  }));
 
 export const mockEventsAPI = {
   async detail(slug) {
@@ -381,35 +461,64 @@ export const mockEventsAPI = {
     return ok(mockEvent);
   },
 
+  async quote(slug, data) {
+    await DELAY(350);
+    if (slug !== mockEvent.slug) throw err('Event not found.', 404);
+    const items = data.items || [{ ticket_type: data.ticket_type, quantity: data.quantity }];
+    const first = items[0];
+    const type  = mockEvent.ticket_types.find(t => t.id === first.ticket_type);
+    if (!type) throw err('Ticket type not found.', 404);
+    return ok(priceBasket(type, Number(first.quantity) || 1));
+  },
+
   async createOrder(slug, data) {
     await DELAY(700);
-    const type = mockEvent.ticket_types.find(t => t.id === Number(data.ticket_type));
+    const type = mockEvent.ticket_types.find(t => t.id === data.ticket_type);
     if (!type) throw err('Ticket type not found.', 404);
-    if (type.remaining < data.quantity) throw err('Not enough tickets remaining.', 409);
+    const qty = Number(data.quantity) || 1;
+    if (type.remaining < qty) throw err('Not enough tickets remaining.', 409);
 
+    const priced    = priceBasket(type, qty);
     const reference = `INT-${String(++mockOrderSeq).padStart(6, '0')}`;
-    mockOrders[reference] = {
+    const free      = Number(type.price) === 0;
+
+    const order = {
       order_reference: reference,
       event_name: mockEvent.name,
       event_date: mockEvent.start_date,
       venue_name: mockEvent.venue_name,
       city: mockEvent.city,
       ticket_type_name: type.name,
-      quantity: data.quantity,
-      amount: type.price * data.quantity,
-      currency: type.currency,
+      quantity: qty,
+      currency: priced.currency,
+      subtotal:    priced.subtotal,
+      service_fee: priced.service_fee,
+      vat:         priced.vat,
+      payment_fee: priced.payment_fee,
+      total:       priced.total,
+      amount:      priced.total,
       customer_name: data.full_name,
       customer_email: data.email,
-      payment_status: 'pending',
+      payment_status: free ? 'successful' : 'pending',
+      status: free ? 'paid' : 'pending',
       tickets: [],
       _polls: 0,
     };
+    if (free) order.tickets = issueTickets(order);
+    mockOrders[reference] = order;
 
-    /* Real Paystack returns a checkout URL. In mock we bounce straight back
-       to the confirmation route so the flow stays clickable offline. */
+    /* Free orders come back already paid with no checkout URL. */
     return ok({
       order_reference: reference,
-      authorization_url: `${window.location.origin}/events/order/${reference}`,
+      payment_status: order.payment_status,
+      total: order.total,
+      amount: order.amount,
+      currency: order.currency,
+      subtotal: order.subtotal,
+      service_fee: order.service_fee,
+      vat: order.vat,
+      payment_fee: order.payment_fee,
+      authorization_url: free ? '' : `${window.location.origin}/events/order/${reference}`,
     });
   },
 
@@ -422,13 +531,8 @@ export const mockEventsAPI = {
     order._polls += 1;
     if (order._polls >= 2 && order.payment_status === 'pending') {
       order.payment_status = 'successful';
-      order.tickets = Array.from({ length: order.quantity }, (_, i) => ({
-        ticket_id: `INT-TKT-${reference.slice(4)}-${i + 1}`,
-        attendee_name: order.customer_name,
-        ticket_type_name: order.ticket_type_name,
-        status: 'valid',
-        qr_image_url: null,
-      }));
+      order.status = 'paid';
+      order.tickets = issueTickets(order);
     }
     return ok(order);
   },

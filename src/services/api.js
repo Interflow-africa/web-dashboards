@@ -228,7 +228,13 @@ export const eventsAPI = {
   /** Published event + its purchasable ticket types. */
   detail: (slug) => api.get(`/events/${slug}/`),
 
-  /** Create a pending order → { order_reference, authorization_url }. */
+  /** Price a basket. Reserves nothing, so it's safe to call on every
+      quantity change. The backend asserts a quote equals what checkout
+      then charges, so this total is what Paystack will ask for. */
+  quote: (slug, data) => api.post(`/events/${slug}/quote/`, data),
+
+  /** Create a pending order → { order_reference, authorization_url, total… }.
+      A free (₦0) order comes back already `successful` with no URL. */
   createOrder: (slug, data) => api.post(`/events/${slug}/orders/`, data),
 
   /** Poll after returning from Paystack → payment_status + issued tickets. */
