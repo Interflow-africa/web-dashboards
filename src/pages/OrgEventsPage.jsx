@@ -4,6 +4,7 @@ import { Calendar, MapPin, ChevronRight, Ticket } from 'lucide-react';
 import DashboardLayout from '@/components/common/DashboardLayout';
 import { eventsAPI } from '@/services/index';
 import { formatMoney } from '@/utils/currency';
+import { imageUrl } from '@/utils/imageUrl';
 
 /* Event lifecycle states (§6). */
 const STATUS_PILL = {
@@ -43,8 +44,8 @@ const EventRow = ({ event, onOpen }) => {
       className="w-full text-left bg-white rounded-2xl border border-[#EBEBEB] p-4 sm:p-5 hover:shadow-md hover:border-[#8D5D1D]/40 transition-all group flex gap-4 items-center">
       {/* Thumbnail */}
       <div className="w-[72px] h-[72px] rounded-xl bg-[#F4F2EE] shrink-0 overflow-hidden flex items-center justify-center">
-        {event.image
-          ? <img src={event.image} alt="" className="w-full h-full object-cover"
+        {imageUrl(event.image)
+          ? <img src={imageUrl(event.image)} alt="" className="w-full h-full object-cover"
               onError={e => { e.currentTarget.style.display = 'none'; }} />
           : <Ticket size={22} className="text-[#CBBFA8]" />}
       </div>

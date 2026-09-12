@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { eventsAPI } from '@/services/index';
 import getApiError from '@/utils/apiError';
 import { formatMoney, isFree } from '@/utils/currency';
+import { imageUrl } from '@/utils/imageUrl';
 import InterflowLogo from '@/components/common/InterflowLogo';
 
 const GOLD      = '#8D5D1D';
@@ -403,6 +404,7 @@ const EventPage = () => {
     return <Unavailable title={event.name} message={copy[event.status] || 'Tickets are not on sale.'} />;
   }
 
+  const cover    = imageUrl(event.image);
   const location = [event.venue_name, event.city, event.country].filter(Boolean).join(', ');
   const dateLine = [
     fmtDate(event.start_date),
@@ -417,16 +419,22 @@ const EventPage = () => {
         <a href="#tickets" className="text-[13px] font-semibold" style={{ color: GOLD }}>Get Tickets</a>
       </header>
 
-      {/* Hero */}
-      <div className="relative overflow-hidden" style={{
-        background: event.image
-          ? 'linear-gradient(to bottom, rgba(13,13,13,0.55) 0%, rgba(13,13,13,0.88) 100%)'
-          : 'linear-gradient(135deg, #0D0D0D 0%, #1a1208 60%, #0D0D0D 100%)',
-        minHeight: 260,
-      }}>
-        {event.image && (
-          <img src={event.image} alt="" className="absolute inset-0 w-full h-full object-cover -z-10 opacity-55" />
+      {/* Hero — image, then scrim, then content, as explicit sibling layers.
+          A negative z-index on the image instead pushed it behind the page
+          wrapper's opaque background, hiding it entirely: `relative` alone
+          doesn't establish a stacking context for it to sit inside. */}
+      <div className="relative overflow-hidden" style={{ minHeight: 260, background: '#0D0D0D' }}>
+        {cover && (
+          <img src={cover} alt="" aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ opacity: 0.55 }}
+            onError={e => { e.currentTarget.style.display = 'none'; }} />
         )}
+        <div className="absolute inset-0" aria-hidden="true" style={{
+          background: cover
+            ? 'linear-gradient(to bottom, rgba(13,13,13,0.55) 0%, rgba(13,13,13,0.88) 100%)'
+            : 'linear-gradient(135deg, #0D0D0D 0%, #1a1208 60%, #0D0D0D 100%)',
+        }} />
         <div className="relative z-10 max-w-[720px] mx-auto px-5 sm:px-6 py-12">
           {event.category && (
             <p className="text-[#D4A84B] text-[12px] font-bold uppercase tracking-[0.15em] mb-3">{event.category_display || event.category}</p>
