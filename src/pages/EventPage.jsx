@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, X, Minus, Plus, ArrowRight, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -38,9 +38,6 @@ const availabilityOf = (t) => {
   return { ok: true, label: null };
 };
 
-/* Money arrives as a string ("6629.45"); compare in kobo to dodge float drift. */
-const kobo = (v) => Math.round(Number(v ?? 0) * 100);
-
 /* ─── Full-page states ──────────────────────────────────────────── */
 const PageLoader = () => (
   <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: '#0D0D0D' }}>
@@ -68,16 +65,6 @@ const CheckoutModal = ({ event, ticket, onClose }) => {
   const [errors, setErrors]   = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  /* Server-priced basket. Fees are added on top of the ticket price, so a
-     local qty x price under-states what Paystack will actually charge. */
-  const [quote, setQuote]         = useState(null);
-  const [quoteLoading, setQuoteLoading] = useState(true);
-  const quoteReq = useRef(0);
-
-  /* Set only when the amount we showed disagrees with what the order came
-     back with — then we confirm rather than redirecting silently. */
-  const [confirm, setConfirm] = useState(null);
-
   const set = (k) => (e) => {
     setForm(f => ({ ...f, [k]: e.target.value }));
     setErrors(er => { const n = { ...er }; delete n[k]; return n; });
@@ -87,26 +74,11 @@ const CheckoutModal = ({ event, ticket, onClose }) => {
   const maxQty = Math.max(1, Math.min(Number(ticket.remaining) || 1, Number(ticket.max_per_order) || 10));
   const free   = isFree(ticket.price);
 
-  /* Re-quote as the stepper moves. Debounced, and stale replies are dropped
-     so a slow response for qty=2 can't overwrite a fresh one for qty=3. */
-  useEffect(() => {
-    if (free) { setQuote(null); setQuoteLoading(false); return; }
-    const id = ++quoteReq.current;
-    setQuoteLoading(true);
-    const t = setTimeout(() => {
-      eventsAPI.quote(event.slug, { ticket_type: ticket.id, quantity: qty })
-        .then(r => { if (id === quoteReq.current) setQuote(r.data?.data || r.data || null); })
-        .catch(() => { if (id === quoteReq.current) setQuote(null); })
-        .finally(() => { if (id === quoteReq.current) setQuoteLoading(false); });
-    }, 300);
-    return () => clearTimeout(t);
-  }, [event.slug, ticket.id, qty, free]);
-
-  /* Fallback keeps checkout usable if quoting fails — the order response is
-     authoritative either way, and we reconcile against it before redirecting. */
-  const fallbackTotal = Number(ticket.price) * qty;
-  const shownTotal    = quote?.total ?? fallbackTotal;
-  const priced        = Boolean(quote);
+  /* Buyers see ticket money only. Paystack's cut is added on its own page,
+     and our service fee and VAT are settled against the organiser — they
+     are never a buyer-facing cost. No quote call is needed: the ticket
+     price already comes down with the event payload. */
+  const ticketTotal = Number(ticket.price) * qty;
 
   const validate = () => {
     const e = {};
@@ -145,16 +117,9 @@ const CheckoutModal = ({ event, ticket, onClose }) => {
         return;
       }
 
-      /* Rates and prices are read live at order time, so the total can move
-         between quoting and submitting (an admin edit, or our fallback never
-         knew the fees). Only interrupt when the numbers actually disagree. */
-      const authoritative = d.total ?? d.amount;
-      if (authoritative != null && kobo(authoritative) !== kobo(shownTotal)) {
-        setConfirm({ total: authoritative, currency: d.currency || ticket.currency, url: d.authorization_url });
-        setSubmitting(false);
-        return;
-      }
-
+      /* Paystack's own page shows the real amount before any card details
+         are entered — that is the buyer's first and only confirmation, and
+         we deliberately don't pre-empt it here. */
       window.location.href = d.authorization_url;
     } catch (err) {
       toast.error(getApiError(err, 'Could not start checkout. Please try again.'));
@@ -172,33 +137,6 @@ const CheckoutModal = ({ event, ticket, onClose }) => {
       <span className={strong ? 'text-[18px] font-bold text-gray-900' : 'text-[13px] text-gray-700'}>{value}</span>
     </div>
   );
-
-  /* ── Amount changed between quote and order — confirm before Paystack ── */
-  if (confirm) {
-    return (
-      <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center sm:p-4">
-        <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-[460px] p-6">
-          <h2 className="font-bold text-[17px] text-gray-900 mb-2">Confirm your total</h2>
-          <p className="text-[13.5px] text-gray-500 leading-relaxed mb-5">
-            The amount for this order is{' '}
-            <strong className="text-gray-900">{formatMoney(confirm.total, confirm.currency)}</strong>.
-            This includes the booking and payment processing fees. Paystack will ask for this amount.
-          </p>
-          <div className="flex gap-3">
-            <button type="button" onClick={() => setConfirm(null)}
-              className="flex-1 h-12 rounded-full border border-gray-200 text-[14px] font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-              Back
-            </button>
-            <button type="button" onClick={() => { window.location.href = confirm.url; }}
-              className="flex-1 h-12 rounded-full text-white text-[14px] font-semibold flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-95"
-              style={{ background: GOLD }}>
-              Continue <ArrowRight size={15} />
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center sm:p-4">
@@ -263,44 +201,17 @@ const CheckoutModal = ({ event, ticket, onClose }) => {
             </div>
           </div>
 
-          {/* Price breakdown — server-priced so it matches the Paystack page */}
-          <div className="border-t border-gray-100 pt-4 flex flex-col gap-2">
-            {free ? (
-              <Row label={`${qty} x Free`} value="Free" strong />
-            ) : quoteLoading && !quote ? (
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-[13px] text-gray-400">Calculating total…</span>
-                <span className="h-5 w-24 rounded bg-gray-100 animate-pulse" />
-              </div>
-            ) : priced ? (
-              <>
-                <Row label={`Tickets (${qty} x ${formatMoney(ticket.price, ticket.currency)})`}
-                     value={formatMoney(quote.subtotal, quote.currency)} />
-                {Number(quote.service_fee) > 0 && (
-                  <Row label="Booking fee" value={formatMoney(quote.service_fee, quote.currency)} />
-                )}
-                {Number(quote.vat) > 0 && (
-                  <Row label="VAT" value={formatMoney(quote.vat, quote.currency)} />
-                )}
-                {Number(quote.payment_fee) > 0 && (
-                  <Row label="Payment processing" value={formatMoney(quote.payment_fee, quote.currency)} />
-                )}
-                <div className="border-t border-gray-100 pt-2 mt-1">
-                  <Row label="Total" value={formatMoney(quote.total, quote.currency)} strong />
-                </div>
-              </>
-            ) : (
-              <>
-                <Row label={`${qty} x ${formatMoney(ticket.price, ticket.currency)}`}
-                     value={formatMoney(fallbackTotal, ticket.currency)} strong />
-                <p className="text-[11.5px] text-amber-600">
-                  Booking and payment fees are added at checkout — we'll confirm the final amount before you pay.
-                </p>
-              </>
-            )}
+          {/* Ticket money only. The amount including Paystack's cut appears
+              for the first time on their checkout page. */}
+          <div className="border-t border-gray-100 pt-4">
+            <Row
+              label={free ? `${qty} x Free` : `Tickets (${qty} x ${formatMoney(ticket.price, ticket.currency)})`}
+              value={free ? 'Free' : formatMoney(ticketTotal, ticket.currency)}
+              strong
+            />
           </div>
 
-          <button type="submit" disabled={submitting || (!free && quoteLoading)}
+          <button type="submit" disabled={submitting}
             className="w-full h-12 rounded-full text-white text-[14px] font-semibold flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
             style={{ background: GOLD }}
             onMouseEnter={e => { if (!submitting) e.currentTarget.style.background = GOLD_DARK; }}
