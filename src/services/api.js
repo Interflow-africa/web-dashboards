@@ -231,9 +231,10 @@ export const eventsAPI = {
   /** Published event + its purchasable ticket types. */
   detail: (slug) => api.get(`/events/${slug}/`),
 
-  /** Price a basket. Reserves nothing, so it's safe to call on every
-      quantity change. The backend asserts a quote equals what checkout
-      then charges, so this total is what Paystack will ask for. */
+  /** Price a basket — ticket money only. total, payment_fee, service_fee
+      and vat were removed: buyers see no fees before Paystack's own page.
+      Reserves nothing. Currently unused by checkout, which derives
+      qty x price from the event payload. */
   quote: (slug, data) => api.post(`/events/${slug}/quote/`, data),
 
   /** Create a pending order → { order_reference, authorization_url, total… }.

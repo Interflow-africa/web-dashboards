@@ -471,7 +471,11 @@ export const mockEventsAPI = {
     const first = items[0];
     const type  = mockEvent.ticket_types.find(t => t.id === first.ticket_type);
     if (!type) throw err('Ticket type not found.', 404);
-    return ok(priceBasket(type, Number(first.quantity) || 1));
+    /* Ticket money only. total, payment_fee, service_fee and vat were
+       removed from this response — buyers never see fees before Paystack,
+       and a backend test asserts those four can't reappear here. */
+    const { currency, ticket_count, subtotal, lines } = priceBasket(type, Number(first.quantity) || 1);
+    return ok({ currency, ticket_count, subtotal, lines });
   },
 
   async createOrder(slug, data) {
@@ -494,9 +498,9 @@ export const mockEventsAPI = {
       ticket_type_name: type.name,
       quantity: qty,
       currency: priced.currency,
+      /* service_fee and vat are organiser deductions, not buyer costs, and
+         were removed from the order payload. The charged amount stays. */
       subtotal:    priced.subtotal,
-      service_fee: priced.service_fee,
-      vat:         priced.vat,
       payment_fee: priced.payment_fee,
       total:       priced.total,
       amount:      priced.total,
@@ -518,8 +522,6 @@ export const mockEventsAPI = {
       amount: order.amount,
       currency: order.currency,
       subtotal: order.subtotal,
-      service_fee: order.service_fee,
-      vat: order.vat,
       payment_fee: order.payment_fee,
       authorization_url: free ? '' : `${window.location.origin}/events/order/${reference}`,
     });
