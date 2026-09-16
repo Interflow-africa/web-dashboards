@@ -159,52 +159,40 @@ const OrgEventDetailPage = () => {
             <Tile
               label="Net settlement" bg="#FFF8EC" iconBg="#FDE68A"
               value={formatMoney(sales.net_settlement ?? 0, 'NGN')}
-              sub="What you're owed"
+              sub="Paid to your organisation"
               icon={<Wallet size={18} color="#B45309" />}
             />
           </div>
 
-          {/* Money breakdown — ticket money kept separate from fees */}
+          {/* Settlement statement. Interflow's fee and VAT are deducted from
+              ticket sales; the buyer-side Paystack cut is not the organiser's
+              concern and is deliberately not shown. */}
           <div className="bg-white rounded-2xl border border-[#EBEBEB] p-5">
             <p className="font-bold text-[14px] text-[#1A1A1A] mb-1">Settlement</p>
             <p className="text-[12px] text-[#AAAAAA] mb-4">
-              Ticket revenue is yours. Fees below were paid by the buyer on top of the ticket price.
+              Interflow's fee and VAT are deducted from your ticket sales. The rest is paid to you.
             </p>
 
             <div className="flex flex-col gap-2 max-w-[460px]">
               {[
-                ['Gross ticket sales', sales.gross_sales],
-                ['Refunded', sales.refunded_sales],
-              ].filter(([, v]) => v != null).map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4 text-[13px]">
-                  <span className="text-[#888]">{k}</span>
-                  <span className="text-[#1A1A1A] font-medium">{formatMoney(v, 'NGN')}</span>
+                { label: 'Gross ticket sales', value: sales.gross_sales,    show: sales.gross_sales != null },
+                { label: 'Refunded',           value: sales.refunded_sales, deduct: true, show: Number(sales.refunded_sales) > 0 },
+                { label: 'Interflow fee',      value: sales.service_fee,    deduct: true, show: sales.service_fee != null },
+                { label: 'VAT',                value: sales.vat,            deduct: true, show: sales.vat != null },
+              ].filter(r => r.show).map(r => (
+                <div key={r.label} className="flex justify-between gap-4 text-[13px]">
+                  <span className="text-[#888]">{r.label}</span>
+                  <span className={r.deduct ? 'text-[#888]' : 'text-[#1A1A1A] font-medium'}>
+                    {r.deduct ? '− ' : ''}{formatMoney(r.value, 'NGN')}
+                  </span>
                 </div>
               ))}
 
               <div className="flex justify-between gap-4 pt-2 mt-1 border-t border-gray-100">
-                <span className="text-[13px] font-semibold text-[#1A1A1A]">Net settlement</span>
+                <span className="text-[13px] font-semibold text-[#1A1A1A]">Amount to your organisation</span>
                 <span className="text-[16px] font-bold text-[#1A1A1A]">
                   {formatMoney(sales.net_settlement ?? 0, 'NGN')}
                 </span>
-              </div>
-
-              {/* Buyer-side fees — informational, not deducted from settlement */}
-              <div className="mt-4 pt-3 border-t border-dashed border-gray-200">
-                <p className="text-[11px] font-semibold text-[#AAAAAA] uppercase tracking-wide mb-2">
-                  Fees paid by buyers
-                </p>
-                {[
-                  ['Interflow fee', sales.service_fee],
-                  ['VAT', sales.vat],
-                  ['Payment processing', sales.payment_processing_fee],
-                  ['Total charged to buyers', sales.buyer_charged],
-                ].filter(([, v]) => v != null).map(([k, v]) => (
-                  <div key={k} className="flex justify-between gap-4 text-[12.5px] py-0.5">
-                    <span className="text-[#AAAAAA]">{k}</span>
-                    <span className="text-[#666]">{formatMoney(v, 'NGN')}</span>
-                  </div>
-                ))}
               </div>
             </div>
           </div>
