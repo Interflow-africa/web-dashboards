@@ -7,6 +7,7 @@ import getApiError from '@/utils/apiError';
 import AuthSplitLayout from '@/components/layout/AuthSplitLayout';
 import FloatingInput from '@/components/common/FloatingInput';
 import useAuthStore from '@/store/authStore';
+import { homeFor } from '@/utils/homeFor';
 import './Auth.css';
 
 /* ─── Brand ─────────────────────────────────────────────────────── */
@@ -43,11 +44,9 @@ const LoginPage = () => {
   const onSubmit = async (data) => {
     try {
       const res = await login(data);
-      if (!res.is_onboarded) {
-        navigate(res.role === 'artist' ? '/onboarding/artist' : '/onboarding/organization');
-      } else {
-        navigate(res.role === 'artist' ? '/dashboard' : '/org/dashboard');
-      }
+      /* Shared with PublicRoute so the two can't drift. Staff accounts have
+         a blank role and belong at the door screen, not the org dashboard. */
+      navigate(homeFor(res));
     } catch (err) {
       toast.error(getApiError(err, 'Invalid credentials. Please try again.'));
     }

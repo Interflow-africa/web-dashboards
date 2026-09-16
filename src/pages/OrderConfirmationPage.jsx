@@ -180,6 +180,34 @@ const OrderConfirmationPage = () => {
     );
   }
 
+  /* ── Paid, but we couldn't issue a ticket ──
+     payment_status comes back as "failed" here, so this must be checked
+     first: the generic copy says "you have not been charged", which is
+     exactly wrong for this case — the money did arrive. */
+  if (order.status === 'needs_refund') {
+    return (
+      <Centered>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+          <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle size={24} className="text-amber-500" />
+          </div>
+          <h1 className="font-bold text-[20px] text-gray-900 mb-2">Payment received — refund on the way</h1>
+          <p className="text-[14px] text-gray-500 leading-relaxed mb-2">
+            Your payment went through, but we weren't able to issue a ticket for it.
+            The order has been flagged for a refund and our team is processing it.
+            You don't need to do anything.
+          </p>
+          {order.order_reference && (
+            <p className="text-[12px] text-gray-400 mb-6">Reference: {order.order_reference}</p>
+          )}
+          <Link to="/" className="text-[14px] font-semibold hover:underline" style={{ color: GOLD }}>
+            Back to Interflow
+          </Link>
+        </div>
+      </Centered>
+    );
+  }
+
   /* ── Failed / cancelled ── */
   if (['failed', 'cancelled'].includes(order.payment_status)) {
     return (
@@ -190,7 +218,8 @@ const OrderConfirmationPage = () => {
           </div>
           <h1 className="font-bold text-[20px] text-gray-900 mb-2">Payment not completed</h1>
           <p className="text-[14px] text-gray-500 mb-6">
-            Your payment was not successful, so no ticket was issued. You have not been charged.
+            Your payment was not completed, so no ticket was issued.
+            If anything was debited, it will be reversed automatically.
           </p>
           <Link to="/" className="text-[14px] font-semibold hover:underline" style={{ color: GOLD }}>
             Back to Interflow
@@ -235,13 +264,37 @@ const OrderConfirmationPage = () => {
               ['Date', fmtDate(order.event_date)],
               ['Venue', [order.venue_name, order.city].filter(Boolean).join(', ')],
               ['Ticket', order.ticket_type_name && `${order.ticket_type_name} × ${order.quantity}`],
-              ['Amount', order.amount != null && formatMoney(order.amount, order.currency)],
             ].filter(([, v]) => v).map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4 text-[13px]">
                 <span className="text-gray-400 shrink-0">{k}</span>
                 <span className="text-gray-800 font-medium text-right">{v}</span>
               </div>
             ))}
+          </div>
+
+          {/* What was actually charged — mirrors the Paystack amount */}
+          <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2">
+            {[
+              ['Tickets', order.subtotal],
+              ['Booking fee', order.service_fee],
+              ['VAT', order.vat],
+              ['Payment processing', order.payment_fee],
+            ]
+              .filter(([, v]) => v != null && v !== '' && Number(v) > 0)
+              .map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-4 text-[13px]">
+                  <span className="text-gray-400 shrink-0">{k}</span>
+                  <span className="text-gray-700 text-right">{formatMoney(v, order.currency)}</span>
+                </div>
+              ))}
+            {(order.total ?? order.amount) != null && (
+              <div className="flex justify-between gap-4 pt-2 border-t border-gray-100">
+                <span className="text-[13px] font-semibold text-gray-900">Total paid</span>
+                <span className="text-[15px] font-bold text-gray-900">
+                  {formatMoney(order.total ?? order.amount, order.currency)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

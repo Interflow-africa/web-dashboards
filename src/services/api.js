@@ -225,14 +225,42 @@ export const orgFormsAPI = {
     creates a PENDING order and hands back a Paystack authorization_url.
     The confirmation page then polls orderStatus until the webhook lands.  */
 export const eventsAPI = {
+  /** Published events. Filters: { city, category }. */
+  list: (params) => api.get('/events/', { params }),
+
   /** Published event + its purchasable ticket types. */
   detail: (slug) => api.get(`/events/${slug}/`),
 
-  /** Create a pending order → { order_reference, authorization_url }. */
+  /** Price a basket — ticket money only. total, payment_fee, service_fee
+      and vat were removed: buyers see no fees before Paystack's own page.
+      Reserves nothing. Currently unused by checkout, which derives
+      qty x price from the event payload. */
+  quote: (slug, data) => api.post(`/events/${slug}/quote/`, data),
+
+  /** Create a pending order → { order_reference, authorization_url, total… }.
+      A free (₦0) order comes back already `successful` with no URL. */
   createOrder: (slug, data) => api.post(`/events/${slug}/orders/`, data),
 
   /** Poll after returning from Paystack → payment_status + issued tickets. */
   orderStatus: (reference) => api.get(`/events/orders/${reference}/`),
+
+  /* ── Organisation-scoped, read-only (org bearer) ──────────────────
+     Already scoped server-side: another org gets 404, an artist 403.
+     Attendee rows deliberately carry no buyer email/phone — organisers
+     get what they need to work the door, contact details stay with
+     INTERFLOW admin. Don't build UI that expects them. */
+  orgEvents:    ()   => api.get('/events/organization/events/'),
+  orgSales:     (id) => api.get(`/events/organization/events/${id}/sales/`),
+  orgAttendees: (id) => api.get(`/events/organization/events/${id}/attendees/`),
+
+  /* ── Door check-in (staff bearer) ─────────────────────────────────
+     Outcomes are carried by HTTP status, not just the body:
+       200 valid · 409 already used · 404 not a ticket
+       400 cancelled / refunded / wrong event (read `message`)
+     Every response carries fresh `stats`, so the counters update
+     without a second request. */
+  checkIn:      (data)    => api.post('/events/check-in/', data),
+  checkInStats: (eventId) => api.get(`/events/${eventId}/check-in/stats/`),
 };
 
 // ─── Call For Artists (always public — no auth header needed) ──────

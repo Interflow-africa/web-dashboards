@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, X, Minus, Plus, ArrowRight, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { eventsAPI } from '@/services/index';
 import getApiError from '@/utils/apiError';
 import { formatMoney, isFree } from '@/utils/currency';
+import { imageUrl } from '@/utils/imageUrl';
 import InterflowLogo from '@/components/common/InterflowLogo';
 
 const GOLD      = '#8D5D1D';
@@ -24,15 +25,15 @@ const fmtTime = (t) => {
 
 /* A ticket type is buyable only if active, in its sales window and in stock. */
 const availabilityOf = (t) => {
-  if (t.is_active === false)            return { ok: false, label: 'Unavailable' };
-  if (Number(t.remaining) <= 0)         return { ok: false, label: 'Sold Out' };
-  if (t.sales_start_date && new Date(t.sales_start_date) > new Date())
-                                        return { ok: false, label: 'Not Yet On Sale' };
-  if (t.sales_end_date) {
-    /* Sales run through the END of the closing day. */
-    const end = new Date(t.sales_end_date);
-    end.setHours(23, 59, 59, 999);
-    if (end < new Date())               return { ok: false, label: 'Sales Closed' };
+  if (t.is_active === false)                     return { ok: false, label: 'Unavailable' };
+  if (t.is_sold_out || Number(t.remaining) <= 0) return { ok: false, label: 'Sold Out' };
+  /* `on_sale` is computed server-side against the real datetime window.
+     The dates below only pick which label to show — never availability,
+     since sales_end_at is a timestamp, not an end-of-day boundary. */
+  if (t.on_sale === false) {
+    const startsAt = t.sales_start_at || t.sales_start_date;
+    if (startsAt && new Date(startsAt) > new Date()) return { ok: false, label: 'Not Yet On Sale' };
+    return { ok: false, label: 'Sales Closed' };
   }
   return { ok: true, label: null };
 };
@@ -57,6 +58,8 @@ const Unavailable = ({ title, message }) => (
 
 /* ─── Checkout modal — quantity + attendee details (§10) ────────── */
 const CheckoutModal = ({ event, ticket, onClose }) => {
+  const navigate = useNavigate();
+
   const [qty, setQty]         = useState(1);
   const [form, setForm]       = useState({ full_name: '', email: '', phone_number: '' });
   const [errors, setErrors]   = useState({});
@@ -67,9 +70,15 @@ const CheckoutModal = ({ event, ticket, onClose }) => {
     setErrors(er => { const n = { ...er }; delete n[k]; return n; });
   };
 
-  /* Never let the UI offer more than stock or the per-order cap. */
+  /* Never offer more than stock or the per-order cap. */
   const maxQty = Math.max(1, Math.min(Number(ticket.remaining) || 1, Number(ticket.max_per_order) || 10));
-  const total  = Number(ticket.price) * qty;
+  const free   = isFree(ticket.price);
+
+  /* Buyers see ticket money only. Paystack's cut is added on its own page,
+     and our service fee and VAT are settled against the organiser — they
+     are never a buyer-facing cost. No quote call is needed: the ticket
+     price already comes down with the event payload. */
+  const ticketTotal = Number(ticket.price) * qty;
 
   const validate = () => {
     const e = {};
@@ -96,12 +105,21 @@ const CheckoutModal = ({ event, ticket, onClose }) => {
       });
       const d = res.data?.data || res.data || {};
 
+      /* A free order is already paid and ticketed — there is no Paystack hop. */
+      if (d.payment_status === 'successful' || (free && d.order_reference)) {
+        navigate(`/events/order/${d.order_reference}`);
+        return;
+      }
+
       if (!d.authorization_url) {
         toast.error('Could not start checkout. Please try again.');
         setSubmitting(false);
         return;
       }
-      /* Hand off to Paystack. The ticket is issued by the webhook, never here. */
+
+      /* Paystack's own page shows the real amount before any card details
+         are entered — that is the buyer's first and only confirmation, and
+         we deliberately don't pre-empt it here. */
       window.location.href = d.authorization_url;
     } catch (err) {
       toast.error(getApiError(err, 'Could not start checkout. Please try again.'));
@@ -112,6 +130,13 @@ const CheckoutModal = ({ event, ticket, onClose }) => {
   const inputCls = (bad) =>
     `w-full border rounded-xl px-4 py-3 text-[14px] text-gray-800 outline-none transition-colors placeholder:text-gray-300 ${
       bad ? 'border-red-400' : 'border-gray-200 focus:border-[#8D5D1D]'}`;
+
+  const Row = ({ label, value, strong }) => (
+    <div className="flex items-center justify-between gap-4">
+      <span className={`text-[13px] ${strong ? 'font-semibold text-gray-900' : 'text-gray-500'}`}>{label}</span>
+      <span className={strong ? 'text-[18px] font-bold text-gray-900' : 'text-[13px] text-gray-700'}>{value}</span>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center sm:p-4">
@@ -176,14 +201,14 @@ const CheckoutModal = ({ event, ticket, onClose }) => {
             </div>
           </div>
 
-          {/* Total */}
-          <div className="flex items-center justify-between border-t border-gray-100 pt-4">
-            <span className="text-[13px] text-gray-500">
-              {qty} × {isFree(ticket.price) ? 'Free' : formatMoney(ticket.price, ticket.currency)}
-            </span>
-            <span className="text-[20px] font-bold text-gray-900">
-              {isFree(total) ? 'Free' : formatMoney(total, ticket.currency)}
-            </span>
+          {/* Ticket money only. The amount including Paystack's cut appears
+              for the first time on their checkout page. */}
+          <div className="border-t border-gray-100 pt-4">
+            <Row
+              label={free ? `${qty} x Free` : `Tickets (${qty} x ${formatMoney(ticket.price, ticket.currency)})`}
+              value={free ? 'Free' : formatMoney(ticketTotal, ticket.currency)}
+              strong
+            />
           </div>
 
           <button type="submit" disabled={submitting}
@@ -191,11 +216,13 @@ const CheckoutModal = ({ event, ticket, onClose }) => {
             style={{ background: GOLD }}
             onMouseEnter={e => { if (!submitting) e.currentTarget.style.background = GOLD_DARK; }}
             onMouseLeave={e => { if (!submitting) e.currentTarget.style.background = GOLD; }}>
-            {submitting ? 'Starting checkout…' : <>Proceed to Payment <ArrowRight size={15} /></>}
+            {submitting ? 'Starting checkout…' : free ? <>Get Ticket <ArrowRight size={15} /></> : <>Proceed to Payment <ArrowRight size={15} /></>}
           </button>
 
           <p className="text-[11.5px] text-gray-400 text-center -mt-1">
-            You'll be redirected to Paystack to complete payment securely.
+            {free
+              ? 'No payment required — your ticket is issued immediately.'
+              : "You'll be redirected to Paystack to complete payment securely."}
           </p>
         </form>
       </div>
@@ -288,6 +315,7 @@ const EventPage = () => {
     return <Unavailable title={event.name} message={copy[event.status] || 'Tickets are not on sale.'} />;
   }
 
+  const cover    = imageUrl(event.image);
   const location = [event.venue_name, event.city, event.country].filter(Boolean).join(', ');
   const dateLine = [
     fmtDate(event.start_date),
@@ -302,19 +330,25 @@ const EventPage = () => {
         <a href="#tickets" className="text-[13px] font-semibold" style={{ color: GOLD }}>Get Tickets</a>
       </header>
 
-      {/* Hero */}
-      <div className="relative overflow-hidden" style={{
-        background: event.image
-          ? 'linear-gradient(to bottom, rgba(13,13,13,0.55) 0%, rgba(13,13,13,0.88) 100%)'
-          : 'linear-gradient(135deg, #0D0D0D 0%, #1a1208 60%, #0D0D0D 100%)',
-        minHeight: 260,
-      }}>
-        {event.image && (
-          <img src={event.image} alt="" className="absolute inset-0 w-full h-full object-cover -z-10 opacity-55" />
+      {/* Hero — image, then scrim, then content, as explicit sibling layers.
+          A negative z-index on the image instead pushed it behind the page
+          wrapper's opaque background, hiding it entirely: `relative` alone
+          doesn't establish a stacking context for it to sit inside. */}
+      <div className="relative overflow-hidden" style={{ minHeight: 260, background: '#0D0D0D' }}>
+        {cover && (
+          <img src={cover} alt="" aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ opacity: 0.55 }}
+            onError={e => { e.currentTarget.style.display = 'none'; }} />
         )}
+        <div className="absolute inset-0" aria-hidden="true" style={{
+          background: cover
+            ? 'linear-gradient(to bottom, rgba(13,13,13,0.55) 0%, rgba(13,13,13,0.88) 100%)'
+            : 'linear-gradient(135deg, #0D0D0D 0%, #1a1208 60%, #0D0D0D 100%)',
+        }} />
         <div className="relative z-10 max-w-[720px] mx-auto px-5 sm:px-6 py-12">
           {event.category && (
-            <p className="text-[#D4A84B] text-[12px] font-bold uppercase tracking-[0.15em] mb-3">{event.category}</p>
+            <p className="text-[#D4A84B] text-[12px] font-bold uppercase tracking-[0.15em] mb-3">{event.category_display || event.category}</p>
           )}
           <h1 className="text-white font-bold leading-tight mb-4"
             style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(30px, 6vw, 48px)' }}>
@@ -389,7 +423,7 @@ const EventPage = () => {
         )}
 
         <p className="text-center text-[12px] text-gray-400 pb-4">
-          Presented by {event.organisation_name || 'Interflow'} · Powered by Interflow
+          Presented by {event.organization_name || 'Interflow'} · Powered by Interflow
         </p>
       </div>
 

@@ -9,6 +9,7 @@ import { authAPI } from '@/services/index';
 import useAuthStore from '@/store/authStore';
 import tokens from '@/utils/tokens';
 import getApiError from '@/utils/apiError';
+import { homeFor } from '@/utils/homeFor';
 
 /* ─── Query Keys ────────────────────────────────────────────────── */
 export const AUTH_KEYS = {
@@ -47,11 +48,10 @@ export const useLogin = () => {
       useAuthStore.setState({ accessToken: access, refreshToken: refresh, isAuthenticated: true });
       queryClient.invalidateQueries({ queryKey: AUTH_KEYS.me });
 
-      if (!is_onboarded) {
-        navigate(role === 'artist' ? '/onboarding/artist' : '/onboarding/organization');
-      } else {
-        navigate(role === 'artist' ? '/dashboard' : '/org/dashboard');
-      }
+      /* Shared with PublicRoute and LoginPage so the three can't drift.
+         Staff accounts carry a blank role and belong at the door screen,
+         not the org dashboard. */
+      navigate(homeFor({ role, is_onboarded }));
     },
     onError: (err) => {
       toast.error(getApiError(err, 'Invalid credentials. Please try again.'));
