@@ -330,37 +330,53 @@ const EventPage = () => {
         <a href="#tickets" className="text-[13px] font-semibold" style={{ color: GOLD }}>Get Tickets</a>
       </header>
 
-      {/* Hero — image, then scrim, then content, as explicit sibling layers.
-          A negative z-index on the image instead pushed it behind the page
-          wrapper's opaque background, hiding it entirely: `relative` alone
-          doesn't establish a stacking context for it to sit inside. */}
-      <div className="relative overflow-hidden" style={{ minHeight: 260, background: '#0D0D0D' }}>
-        {cover && (
+      {/* Hero. Event images are usually flyers with text baked in, so the
+          poster itself is shown whole (object-contain) and never cropped or
+          dimmed. A blurred copy of the same image fills the banner behind it.
+          Layers are explicit siblings: a negative z-index here previously
+          painted the image beneath the page background. */}
+      <div className="relative overflow-hidden" style={{ background: '#0D0D0D' }}>
+        {cover ? (
           <img src={cover} alt="" aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ opacity: 0.55 }}
+            className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl"
+            style={{ opacity: 0.45 }}
             onError={e => { e.currentTarget.style.display = 'none'; }} />
-        )}
+        ) : null}
         <div className="absolute inset-0" aria-hidden="true" style={{
           background: cover
-            ? 'linear-gradient(to bottom, rgba(13,13,13,0.55) 0%, rgba(13,13,13,0.88) 100%)'
+            ? 'linear-gradient(to bottom, rgba(13,13,13,0.35) 0%, rgba(13,13,13,0.85) 100%)'
             : 'linear-gradient(135deg, #0D0D0D 0%, #1a1208 60%, #0D0D0D 100%)',
         }} />
-        <div className="relative z-10 max-w-[720px] mx-auto px-5 sm:px-6 py-12">
-          {event.category && (
-            <p className="text-[#D4A84B] text-[12px] font-bold uppercase tracking-[0.15em] mb-3">{event.category_display || event.category}</p>
+
+        <div className={`relative z-10 mx-auto px-5 sm:px-6 py-10 sm:py-12 flex flex-col md:flex-row md:items-center gap-7 md:gap-10 ${
+          cover ? 'max-w-[960px]' : 'max-w-[720px]'}`}>
+          {cover && (
+            <img src={cover} alt={`${event.name} poster`}
+              className="w-full max-w-[340px] md:w-[320px] md:max-w-none max-h-[460px] object-contain rounded-2xl shadow-2xl shrink-0 self-center md:self-auto"
+              onError={e => { e.currentTarget.style.display = 'none'; }} />
           )}
-          <h1 className="text-white font-bold leading-tight mb-4"
-            style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(30px, 6vw, 48px)' }}>
-            {event.name}
-          </h1>
-          <div className="flex flex-col gap-1.5 text-white/75 text-[14px]">
-            {dateLine && (
-              <p className="flex items-center gap-2"><Calendar size={14} className="shrink-0" /> {dateLine}</p>
+
+          <div className="min-w-0">
+            {event.category && (
+              <p className="text-[#D4A84B] text-[12px] font-bold uppercase tracking-[0.15em] mb-3">{event.category_display || event.category}</p>
             )}
-            {location && (
-              <p className="flex items-center gap-2"><MapPin size={14} className="shrink-0" /> {location}</p>
-            )}
+            <h1 className="text-white font-bold leading-tight mb-4"
+              style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 'clamp(30px, 6vw, 48px)' }}>
+              {event.name}
+            </h1>
+            <div className="flex flex-col gap-1.5 text-white/80 text-[14px]">
+              {dateLine && (
+                <p className="flex items-center gap-2"><Calendar size={14} className="shrink-0" /> {dateLine}</p>
+              )}
+              {location && (
+                <p className="flex items-center gap-2"><MapPin size={14} className="shrink-0" /> {location}</p>
+              )}
+            </div>
+            <a href="#tickets"
+              className="inline-flex items-center gap-2 mt-6 px-6 h-11 rounded-full text-white text-[14px] font-semibold transition-all hover:opacity-90"
+              style={{ background: GOLD }}>
+              Get Tickets <ArrowRight size={15} />
+            </a>
           </div>
         </div>
       </div>
