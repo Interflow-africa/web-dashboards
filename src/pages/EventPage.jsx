@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, X, Minus, Plus, ArrowRight, Clock } from 'lucide-react';
+import { Calendar, MapPin, X, Minus, Plus, ArrowRight, Clock, Instagram, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { eventsAPI } from '@/services/index';
 import getApiError from '@/utils/apiError';
@@ -36,6 +36,33 @@ const availabilityOf = (t) => {
     return { ok: false, label: 'Sales Closed' };
   }
   return { ok: true, label: null };
+};
+
+/* Admin may enter Instagram as "@name", "name", or a full profile URL. */
+const instagramUrl = (v) => {
+  const t = (v || '').trim();
+  if (!t) return '';
+  if (/^https?:\/\//i.test(t)) return t;
+  return `https://instagram.com/${t.replace(/^@/, '').replace(/^(www\.)?instagram\.com\//i, '')}`;
+};
+
+const instagramHandle = (v) => {
+  const t = (v || '').trim().replace(/\/+$/, '');
+  if (!t) return '';
+  const m = t.match(/instagram\.com\/([^/?#]+)/i);
+  return `@${m ? m[1] : t.replace(/^@/, '')}`;
+};
+
+/* A website typed without a scheme would otherwise resolve relative to us. */
+const externalUrl = (v) => {
+  const t = (v || '').trim();
+  if (!t) return '';
+  return /^https?:\/\//i.test(t) ? t : `https://${t}`;
+};
+
+const prettyHost = (v) => {
+  try { return new URL(externalUrl(v)).hostname.replace(/^www\./, ''); }
+  catch { return (v || '').trim(); }
 };
 
 /* ─── Full-page states ──────────────────────────────────────────── */
@@ -435,6 +462,35 @@ const EventPage = () => {
                 View on Google Maps →
               </a>
             )}
+          </section>
+        )}
+
+        {/* Anything the organiser added that doesn't fit the fixed fields */}
+        {event.additional_info && (
+          <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <h2 className="font-bold text-[16px] text-gray-900 mb-3">Good to know</h2>
+            <p className="text-[14px] text-gray-600 leading-relaxed whitespace-pre-wrap">{event.additional_info}</p>
+          </section>
+        )}
+
+        {/* Organiser links */}
+        {(event.instagram || event.website) && (
+          <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <h2 className="font-bold text-[16px] text-gray-900 mb-3">Follow this event</h2>
+            <div className="flex flex-wrap gap-2.5">
+              {event.instagram && (
+                <a href={instagramUrl(event.instagram)} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-gray-200 text-[13px] font-semibold text-gray-700 hover:border-[#8D5D1D] hover:text-[#8D5D1D] transition-colors">
+                  <Instagram size={15} /> {instagramHandle(event.instagram)}
+                </a>
+              )}
+              {event.website && (
+                <a href={externalUrl(event.website)} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-gray-200 text-[13px] font-semibold text-gray-700 hover:border-[#8D5D1D] hover:text-[#8D5D1D] transition-colors">
+                  <Globe size={15} /> {prettyHost(event.website)}
+                </a>
+              )}
+            </div>
           </section>
         )}
 
