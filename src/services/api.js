@@ -263,6 +263,54 @@ export const eventsAPI = {
   checkInStats: (eventId) => api.get(`/events/${eventId}/check-in/stats/`),
 };
 
+// ─── Admin Console (is_staff only) ────────────────────────────────
+/*  Every call needs the bearer token. Anonymous gets 401; a signed-in
+    non-admin gets 403 on every endpoint — treat 403 as "not an admin"
+    and bounce out of /admin, since it also fires the moment someone's
+    staff flag is revoked mid-session.
+
+    Lists are paginated: { count, next, previous, total_pages,
+    current_page, results }. Money is always a string.  */
+export const adminAPI = {
+  overview: () => api.get('/admin/overview/'),
+
+  // People
+  users:             (params) => api.get('/admin/users/', { params }),
+  user:              (id)     => api.get(`/admin/users/${id}/`),
+  setUserAccess:     (id, data) => api.patch(`/admin/users/${id}/access/`, data),
+  setVerification:   (id, data) => api.patch(`/admin/users/${id}/verification/`, data),
+
+  // Events
+  events:      (params)   => api.get('/admin/events/', { params }),
+  createEvent: (data)     => api.post('/admin/events/', data),
+  event:       (id)       => api.get(`/admin/events/${id}/`),
+  updateEvent: (id, data) => api.patch(`/admin/events/${id}/`, data),
+
+  // Ticket tiers
+  ticketTypes:      (eventId)       => api.get(`/admin/events/${eventId}/ticket-types/`),
+  createTicketType: (eventId, data) => api.post(`/admin/events/${eventId}/ticket-types/`, data),
+  updateTicketType: (id, data)      => api.patch(`/admin/ticket-types/${id}/`, data),
+  /* 400 once any have sold — surface the message and offer is_active:false. */
+  deleteTicketType: (id)            => api.delete(`/admin/ticket-types/${id}/`),
+
+  // Orders. refund moves real money and voids tickets in one step:
+  // 200 done, 502 Paystack refused and nothing changed, 400 not refundable.
+  orders: (params)   => api.get('/admin/orders/', { params }),
+  order:  (id)       => api.get(`/admin/orders/${id}/`),
+  refund: (id, data) => api.post(`/admin/orders/${id}/refund/`, data),
+
+  // Support — only status and admin_response are writable
+  supportTickets: (params) => api.get('/admin/support/', { params }),
+  supportTicket:  (id)     => api.get(`/admin/support/${id}/`),
+  replySupport:   (id, data) => api.patch(`/admin/support/${id}/`, data),
+
+  // Settings — a rate change affects future orders only
+  fees:       () => api.get('/admin/settings/fees/'),
+  updateFees: (data) => api.patch('/admin/settings/fees/', data),
+
+  auditLog: (params) => api.get('/admin/audit-log/', { params }),
+};
+
 // ─── Call For Artists (always public — no auth header needed) ──────
 export const callForArtistsAPI = {
   getForm: (slug) => api.get(`/interflow_form/forms/${slug}/`),

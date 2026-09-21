@@ -42,16 +42,14 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: (credentials) => authAPI.login(credentials),
     onSuccess: (res) => {
-      const { access, refresh, role, is_onboarded } = res.data.data;
+      const { access, refresh, role, is_onboarded, is_staff } = res.data.data;
       tokens.set(access, refresh);
-      setUser({ role, is_onboarded });
+      setUser({ role, is_onboarded, is_staff: Boolean(is_staff) });
       useAuthStore.setState({ accessToken: access, refreshToken: refresh, isAuthenticated: true });
       queryClient.invalidateQueries({ queryKey: AUTH_KEYS.me });
 
-      /* Shared with PublicRoute and LoginPage so the three can't drift.
-         Staff accounts carry a blank role and belong at the door screen,
-         not the org dashboard. */
-      navigate(homeFor({ role, is_onboarded }));
+      /* Shared with PublicRoute and LoginPage so the three can't drift. */
+      navigate(homeFor({ role, is_onboarded, is_staff }));
     },
     onError: (err) => {
       toast.error(getApiError(err, 'Invalid credentials. Please try again.'));
@@ -75,9 +73,9 @@ export const useVerifyOTP = () => {
   return useMutation({
     mutationFn: (data) => authAPI.verifyOTP(data),
     onSuccess: (res) => {
-      const { access, refresh, role, is_onboarded } = res.data.data;
+      const { access, refresh, role, is_onboarded, is_staff } = res.data.data;
       tokens.set(access, refresh);
-      setUser({ role, is_onboarded });
+      setUser({ role, is_onboarded, is_staff: Boolean(is_staff) });
       useAuthStore.setState({ accessToken: access, refreshToken: refresh, isAuthenticated: true });
       queryClient.invalidateQueries({ queryKey: AUTH_KEYS.me });
       navigate('/register/success');
