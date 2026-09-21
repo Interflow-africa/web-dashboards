@@ -36,6 +36,8 @@ const ViewApplicationInfoPage     = lazy(() => import('@/pages/ViewApplicationIn
 const CallForArtistsPage          = lazy(() => import('@/pages/CallForArtistsPage'));
 const ActivateAccountPage         = lazy(() => import('@/pages/ActivateAccountPage'));
 const AdminOverviewPage           = lazy(() => import('@/pages/admin/AdminOverviewPage'));
+const AdminOrdersPage             = lazy(() => import('@/pages/admin/AdminOrdersPage'));
+const AdminOrderDetailPage        = lazy(() => import('@/pages/admin/AdminOrderDetailPage'));
 const EventPage                   = lazy(() => import('@/pages/EventPage'));
 const OrderConfirmationPage       = lazy(() => import('@/pages/OrderConfirmationPage'));
 
@@ -119,6 +121,8 @@ function App() {
           <Route path="/check-in" element={<PrivateRoute><CheckInPage /></PrivateRoute>} />
           {/* Admin console — is_staff only */}
           <Route path="/admin" element={<StaffRoute><AdminOverviewPage /></StaffRoute>} />
+          <Route path="/admin/orders" element={<StaffRoute><AdminOrdersPage /></StaffRoute>} />
+          <Route path="/admin/orders/:id" element={<StaffRoute><AdminOrderDetailPage /></StaffRoute>} />
           <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
           <Route path="/support" element={<PrivateRoute><SupportPage /></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
