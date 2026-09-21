@@ -1,15 +1,19 @@
 /* ─────────────────────────────────────────────────────────────────
    Where a signed-in user belongs.
 
-   Staff accounts come back with a BLANK role, so any check that only
-   tests for 'artist' routes them to the org dashboard — a shell they
-   have no access to. They belong at the door screen.
+   `is_staff` is the only signal that an account can reach /admin —
+   admin accounts carry an ordinary role (often organization, sometimes
+   blank), so role tells us nothing about access. It's checked first,
+   and the console is the single staff home: the door scanner lives as
+   an entry inside it rather than competing to be the landing page.
 
-   Lives in its own module so both App (PublicRoute) and LoginPage can
-   import it without creating a cycle.
+   Lives in its own module so App (PublicRoute), LoginPage and the
+   login hook can all import it without creating a cycle.
    ───────────────────────────────────────────────────────────────── */
 
 export const homeFor = (user) => {
+  if (user?.is_staff) return '/admin';
+
   const role = user?.role;
   if (!role) return '/check-in';
   if (role === 'artist') return user?.is_onboarded ? '/dashboard' : '/onboarding/artist';

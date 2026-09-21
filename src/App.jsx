@@ -35,6 +35,9 @@ const CheckInPage                 = lazy(() => import('@/pages/CheckInPage'));
 const ViewApplicationInfoPage     = lazy(() => import('@/pages/ViewApplicationInfoPage'));
 const CallForArtistsPage          = lazy(() => import('@/pages/CallForArtistsPage'));
 const ActivateAccountPage         = lazy(() => import('@/pages/ActivateAccountPage'));
+const AdminOverviewPage           = lazy(() => import('@/pages/admin/AdminOverviewPage'));
+const AdminOrdersPage             = lazy(() => import('@/pages/admin/AdminOrdersPage'));
+const AdminOrderDetailPage        = lazy(() => import('@/pages/admin/AdminOrderDetailPage'));
 const EventPage                   = lazy(() => import('@/pages/EventPage'));
 const OrderConfirmationPage       = lazy(() => import('@/pages/OrderConfirmationPage'));
 
@@ -47,6 +50,22 @@ const PublicRoute = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return children;
   return <Navigate to={homeFor(user)} replace />;
+};
+
+/* is_staff is the ONLY signal that an account may see /admin. Admin
+   accounts carry an ordinary role (often organization, sometimes blank),
+   so a role check would both admit and reject the wrong people.
+
+   A 403 from any admin endpoint means "not an admin" — including the
+   case where someone's staff flag is revoked mid-session — and the
+   screens surface that themselves; this guard only covers the
+   first paint. */
+const StaffRoute = ({ children }) => {
+  const { isAuthenticated, user } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!user) return null;                      // /me still in flight
+  if (!user.is_staff) return <Navigate to={homeFor(user)} replace />;
+  return children;
 };
 
 const PageLoader = () => (
@@ -100,6 +119,10 @@ function App() {
           {/* Door check-in. Gated on being signed in only — staff accounts
               carry a blank role, so this must never branch on role. */}
           <Route path="/check-in" element={<PrivateRoute><CheckInPage /></PrivateRoute>} />
+          {/* Admin console — is_staff only */}
+          <Route path="/admin" element={<StaffRoute><AdminOverviewPage /></StaffRoute>} />
+          <Route path="/admin/orders" element={<StaffRoute><AdminOrdersPage /></StaffRoute>} />
+          <Route path="/admin/orders/:id" element={<StaffRoute><AdminOrderDetailPage /></StaffRoute>} />
           <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
           <Route path="/support" element={<PrivateRoute><SupportPage /></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />

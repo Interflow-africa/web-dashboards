@@ -28,16 +28,19 @@ const useAuthStore = create(
         set({ isLoading: true });
         try {
           const res = await authAPI.login(credentials);
-          const { access, refresh, role, is_onboarded } = res.data.data;
+          const { access, refresh, role, is_onboarded, is_staff } = res.data.data;
           tokens.set(access, refresh);
           set({
             accessToken: access,
             refreshToken: refresh,
             isAuthenticated: true,
             isLoading: false,
-            user: { role, is_onboarded },
+            /* is_staff is the ONLY signal that an account can see /admin.
+               Admin accounts carry an ordinary role (often organization,
+               sometimes blank), so role tells us nothing about access. */
+            user: { role, is_onboarded, is_staff: Boolean(is_staff) },
           });
-          return { success: true, role, is_onboarded };
+          return { success: true, role, is_onboarded, is_staff: Boolean(is_staff) };
         } catch (err) {
           set({ isLoading: false });
           throw err;
