@@ -263,6 +263,11 @@ export const eventsAPI = {
   checkInStats: (eventId) => api.get(`/events/${eventId}/check-in/stats/`),
 };
 
+const multipartIfNeeded = (data) =>
+  (typeof FormData !== 'undefined' && data instanceof FormData)
+    ? { headers: { 'Content-Type': 'multipart/form-data' } }
+    : undefined;
+
 // ─── Admin Console (is_staff only) ────────────────────────────────
 /*  Every call needs the bearer token. Anonymous gets 401; a signed-in
     non-admin gets 403 on every endpoint — treat 403 as "not an admin"
@@ -280,11 +285,14 @@ export const adminAPI = {
   setUserAccess:     (id, data) => api.patch(`/admin/users/${id}/access/`, data),
   setVerification:   (id, data) => api.patch(`/admin/users/${id}/verification/`, data),
 
-  // Events
+  /* Events. Pass a FormData to upload a poster from disk; pass a plain
+     object to send JSON with an image URL. Axios needs the multipart
+     content-type set explicitly here because the instance defaults to
+     application/json. */
   events:      (params)   => api.get('/admin/events/', { params }),
-  createEvent: (data)     => api.post('/admin/events/', data),
+  createEvent: (data)     => api.post('/admin/events/', data, multipartIfNeeded(data)),
   event:       (id)       => api.get(`/admin/events/${id}/`),
-  updateEvent: (id, data) => api.patch(`/admin/events/${id}/`, data),
+  updateEvent: (id, data) => api.patch(`/admin/events/${id}/`, data, multipartIfNeeded(data)),
 
   // Ticket tiers
   ticketTypes:      (eventId)       => api.get(`/admin/events/${eventId}/ticket-types/`),
