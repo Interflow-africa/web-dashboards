@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle, Info } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Info, ImagePlus, X, Link2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '@/components/common/AdminLayout';
 import { adminAPI } from '@/services/api';
+import { imageUrl } from '@/utils/imageUrl';
 import {
   EVENT_CATEGORIES, STATUS_OPTIONS, isoToLocalInput, localInputToIso,
 } from '@/utils/eventMeta';
@@ -46,6 +47,10 @@ const AdminEventFormPage = () => {
   const [form, setForm]     = useState(EMPTY);
   const [orgs, setOrgs]     = useState([]);
   const [orgsCapped, setOrgsCapped] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [preview, setPreview]     = useState('');
+  const [urlMode, setUrlMode]     = useState(false);
+  const fileRef = useRef(null);
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
@@ -54,6 +59,28 @@ const AdminEventFormPage = () => {
   const set = (k) => (e) => {
     setForm(f => ({ ...f, [k]: e.target.value }));
     setErrors(er => { const n = { ...er }; delete n[k]; return n; });
+  };
+
+  /* Object URLs are only freed by hand. */
+  useEffect(() => () => { if (preview.startsWith('blob:')) URL.revokeObjectURL(preview); }, [preview]);
+
+  const pickFile = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('That file is not an image.'); return; }
+    if (file.size > 5 * 1024 * 1024)     { toast.error('Images must be under 5MB.'); return; }
+    if (preview.startsWith('blob:')) URL.revokeObjectURL(preview);
+    setImageFile(file);
+    setPreview(URL.createObjectURL(file));
+    setForm(f => ({ ...f, image: '' }));
+    setErrors(er => { const n = { ...er }; delete n.image; return n; });
+  };
+
+  const clearImage = () => {
+    if (preview.startsWith('blob:')) URL.revokeObjectURL(preview);
+    setImageFile(null);
+    setPreview('');
+    setForm(f => ({ ...f, image: '' }));
+    if (fileRef.current) fileRef.current.value = '';
   };
 
   /* An event belongs to an organisation USER, not an org profile id. */
@@ -82,6 +109,7 @@ const AdminEventFormPage = () => {
           start_at: isoToLocalInput(ev.start_at),
           end_at:   isoToLocalInput(ev.end_at),
         });
+        if (ev.image) setPreview(imageUrl(ev.image));
       })
       .catch(err => {
         if (alive) setLoadError(err?.response?.data?.message || 'This event could not be loaded.');
@@ -121,9 +149,22 @@ const AdminEventFormPage = () => {
         if (payload[k] === '' && !['name', 'venue_name', 'city', 'country'].includes(k)) delete payload[k];
       });
 
+      /* A chosen file has to go as multipart; a pasted URL stays JSON.
+         null would arrive as the string "null" in a FormData, so it is
+         sent as an empty field instead. */
+      let body = payload;
+      if (imageFile) {
+        body = new FormData();
+        Object.entries(payload).forEach(([k, v]) => {
+          if (k === 'image') return;
+          body.append(k, v === null || v === undefined ? '' : String(v));
+        });
+        body.append('image', imageFile);
+      }
+
       const r = editing
-        ? await adminAPI.updateEvent(id, payload)
-        : await adminAPI.createEvent(payload);
+        ? await adminAPI.updateEvent(id, body)
+        : await adminAPI.createEvent(body);
       const saved = r.data?.data || r.data || {};
       const savedId = saved.id || saved.event?.id || id;
 
@@ -212,10 +253,56 @@ const AdminEventFormPage = () => {
               onChange={set('description')} placeholder="What the event is." />
           </Field>
 
-          <Field label="Poster image URL" error={errors.image} wide
-            hint="Shown whole on the public page, so a flyer's text stays readable.">
-            <input id="ev-image" className={inputCls} value={form.image} onChange={set('image')}
-              placeholder="https://res.cloudinary.com/…" />
+          <Field label="Poster" error={errors.image} wide
+            hint="Shown whole on the public page, so a flyer's text stays readable. Under 5MB.">
+            {preview ? (
+              <div className="flex items-start gap-4">
+                <img src={preview} alt="Poster preview"
+                  className="w-[120px] h-[150px] object-contain rounded-lg border border-[#D7DDE4] bg-[#F6F8FA] shrink-0" />
+                <div className="flex flex-col gap-2 pt-1">
+                  <p className="text-[12.5px] text-[#667382] break-all max-w-[280px]">
+                    {imageFile ? imageFile.name : 'Current poster'}
+                  </p>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => fileRef.current?.click()}
+                      className="h-9 px-3 rounded-lg border border-[#D7DDE4] text-[12.5px] font-semibold text-[#3D4854] hover:bg-[#F6F8FA]">
+                      Replace
+                    </button>
+                    <button type="button" onClick={clearImage}
+                      className="h-9 px-3 rounded-lg border border-[#D7DDE4] text-[12.5px] font-semibold text-[#A32B1C] hover:bg-[#FDF2F0] inline-flex items-center gap-1.5">
+                      <X size={13} /> Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : urlMode ? (
+              <div className="flex gap-2">
+                <input id="ev-image" className={inputCls} value={form.image} onChange={set('image')}
+                  placeholder="https://res.cloudinary.com/…" />
+                <button type="button" onClick={() => setUrlMode(false)}
+                  className="h-[42px] px-3 rounded-lg border border-[#D7DDE4] text-[12.5px] font-semibold text-[#3D4854] hover:bg-[#F6F8FA] shrink-0">
+                  Upload instead
+                </button>
+              </div>
+            ) : (
+              <div
+                onClick={() => fileRef.current?.click()}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => { e.preventDefault(); pickFile(e.dataTransfer.files?.[0]); }}
+                className="border-2 border-dashed border-[#D7DDE4] rounded-xl px-5 py-7 flex flex-col items-center gap-2 cursor-pointer hover:border-[#8D5D1D] hover:bg-[#FBF8F3] transition-colors"
+              >
+                <ImagePlus size={22} className="text-[#98A4B2]" />
+                <p className="text-[13.5px] font-semibold text-[#3D4854]">Choose a poster from your computer</p>
+                <p className="text-[12px] text-[#98A4B2]">or drag one here · JPG or PNG, under 5MB</p>
+                <button type="button"
+                  onClick={e => { e.stopPropagation(); setUrlMode(true); }}
+                  className="mt-1 text-[12.5px] font-semibold text-[#8D5D1D] hover:underline inline-flex items-center gap-1.5">
+                  <Link2 size={13} /> Paste a link instead
+                </button>
+              </div>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" className="hidden"
+              onChange={e => pickFile(e.target.files?.[0])} />
           </Field>
         </Section>
 
