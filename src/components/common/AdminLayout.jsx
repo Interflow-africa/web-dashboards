@@ -2,19 +2,23 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, CalendarDays, Receipt, LifeBuoy,
-  SlidersHorizontal, ScrollText, ScanLine, LogOut, Menu, X, ExternalLink,
+  SlidersHorizontal, ScrollText, ScanLine, LogOut, Menu, X,
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import InterflowLogo from '@/components/common/InterflowLogo';
 
+/* `ready` marks what actually has a route. An unbuilt entry renders as
+   a muted row rather than a link — following one used to fall through
+   the router and land on the public home page, which reads as a broken
+   console rather than an unfinished one. */
 const NAV = [
-  { label: 'Overview',  icon: LayoutDashboard,    to: '/admin' },
-  { label: 'People',    icon: Users,              to: '/admin/people' },
-  { label: 'Events',    icon: CalendarDays,       to: '/admin/events' },
-  { label: 'Orders',    icon: Receipt,            to: '/admin/orders' },
-  { label: 'Support',   icon: LifeBuoy,           to: '/admin/support' },
-  { label: 'Settings',  icon: SlidersHorizontal,  to: '/admin/settings' },
-  { label: 'Audit log', icon: ScrollText,         to: '/admin/audit' },
+  { label: 'Overview',  icon: LayoutDashboard,    to: '/admin',          ready: true },
+  { label: 'People',    icon: Users,              to: '/admin/people',   ready: true },
+  { label: 'Events',    icon: CalendarDays,       to: '/admin/events',   ready: true },
+  { label: 'Orders',    icon: Receipt,            to: '/admin/orders',   ready: true },
+  { label: 'Support',   icon: LifeBuoy,           to: '/admin/support',  ready: false },
+  { label: 'Settings',  icon: SlidersHorizontal,  to: '/admin/settings', ready: false },
+  { label: 'Audit log', icon: ScrollText,         to: '/admin/audit',    ready: false },
 ];
 
 /* The door scanner is a staff tool, so it lives here rather than
@@ -22,6 +26,14 @@ const NAV = [
 const TOOLS = [
   { label: 'Check-in', icon: ScanLine, to: '/check-in' },
 ];
+
+const Pending = ({ icon: Icon, label }) => (
+  <div className="flex items-center gap-3 px-3 py-[10px] rounded-lg mb-0.5 text-[13.5px] font-medium text-white/25 cursor-default select-none">
+    <Icon size={16} strokeWidth={1.8} />
+    <span>{label}</span>
+    <span className="ml-auto text-[9.5px] font-bold uppercase tracking-wider text-white/30">Soon</span>
+  </div>
+);
 
 const Link = ({ to, icon: Icon, label, onClick, end }) => (
   <NavLink
@@ -59,25 +71,14 @@ const AdminLayout = ({ children, title, subtitle, actions }) => {
       </div>
 
       <nav className="flex-1 py-4 px-3 overflow-y-auto">
-        {NAV.map(item => (
-          <Link key={item.to} {...item} end={item.to === '/admin'} onClick={close} />
-        ))}
+        {NAV.map(item => item.ready
+          ? <Link key={item.to} {...item} end={item.to === '/admin'} onClick={close} />
+          : <Pending key={item.to} {...item} />
+        )}
 
         <p className="text-[9.5px] font-bold text-white/25 uppercase tracking-widest px-3 mt-5 mb-2">Tools</p>
         {TOOLS.map(item => <Link key={item.to} {...item} onClick={close} />)}
 
-        {/* Honest link out rather than a placeholder screen: connections,
-            notification settings, call-for-artists forms and artist media
-            still live in Django admin. */}
-        <a
-          href={`${(import.meta.env.VITE_API_URL || '').replace(/\/api\/v1\/?$/, '')}/admin/`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-3 px-3 py-[10px] rounded-lg text-[13.5px] font-medium text-white/40 hover:text-white/75 hover:bg-white/8 transition-colors"
-        >
-          <ExternalLink size={16} strokeWidth={1.8} />
-          Django admin
-        </a>
       </nav>
 
       <div className="px-3 pb-5 pt-3 border-t border-white/10">
