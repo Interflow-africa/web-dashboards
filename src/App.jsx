@@ -38,6 +38,8 @@ const ActivateAccountPage         = lazy(() => import('@/pages/ActivateAccountPa
 const AdminOverviewPage           = lazy(() => import('@/pages/admin/AdminOverviewPage'));
 const AdminOrdersPage             = lazy(() => import('@/pages/admin/AdminOrdersPage'));
 const AdminOrderDetailPage        = lazy(() => import('@/pages/admin/AdminOrderDetailPage'));
+const AdminPeoplePage             = lazy(() => import('@/pages/admin/AdminPeoplePage'));
+const AdminPersonDetailPage       = lazy(() => import('@/pages/admin/AdminPersonDetailPage'));
 const EventPage                   = lazy(() => import('@/pages/EventPage'));
 const OrderConfirmationPage       = lazy(() => import('@/pages/OrderConfirmationPage'));
 
@@ -123,6 +125,8 @@ function App() {
           <Route path="/admin" element={<StaffRoute><AdminOverviewPage /></StaffRoute>} />
           <Route path="/admin/orders" element={<StaffRoute><AdminOrdersPage /></StaffRoute>} />
           <Route path="/admin/orders/:id" element={<StaffRoute><AdminOrderDetailPage /></StaffRoute>} />
+          <Route path="/admin/people" element={<StaffRoute><AdminPeoplePage /></StaffRoute>} />
+          <Route path="/admin/people/:id" element={<StaffRoute><AdminPersonDetailPage /></StaffRoute>} />
           <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
           <Route path="/support" element={<PrivateRoute><SupportPage /></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
