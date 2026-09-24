@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, CalendarDays, Receipt, LifeBuoy,
-  SlidersHorizontal, ScrollText, ScanLine, LogOut, Menu, X, ExternalLink,
+  SlidersHorizontal, ScrollText, ScanLine, LogOut, Menu, X,
 } from 'lucide-react';
 import useAuthStore from '@/store/authStore';
 import InterflowLogo from '@/components/common/InterflowLogo';
@@ -79,18 +79,6 @@ const AdminLayout = ({ children, title, subtitle, actions }) => {
         <p className="text-[9.5px] font-bold text-white/25 uppercase tracking-widest px-3 mt-5 mb-2">Tools</p>
         {TOOLS.map(item => <Link key={item.to} {...item} onClick={close} />)}
 
-        {/* Honest link out rather than a placeholder screen: connections,
-            notification settings, call-for-artists forms and artist media
-            still live in Django admin. */}
-        <a
-          href={`${(import.meta.env.VITE_API_URL || '').replace(/\/api\/v1\/?$/, '')}/admin/`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-3 px-3 py-[10px] rounded-lg text-[13.5px] font-medium text-white/40 hover:text-white/75 hover:bg-white/8 transition-colors"
-        >
-          <ExternalLink size={16} strokeWidth={1.8} />
-          Django admin
-        </a>
       </nav>
 
       <div className="px-3 pb-5 pt-3 border-t border-white/10">
