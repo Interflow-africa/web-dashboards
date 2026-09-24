@@ -40,6 +40,9 @@ const AdminOrdersPage             = lazy(() => import('@/pages/admin/AdminOrders
 const AdminOrderDetailPage        = lazy(() => import('@/pages/admin/AdminOrderDetailPage'));
 const AdminPeoplePage             = lazy(() => import('@/pages/admin/AdminPeoplePage'));
 const AdminPersonDetailPage       = lazy(() => import('@/pages/admin/AdminPersonDetailPage'));
+const AdminEventsPage             = lazy(() => import('@/pages/admin/AdminEventsPage'));
+const AdminEventFormPage          = lazy(() => import('@/pages/admin/AdminEventFormPage'));
+const AdminEventDetailPage        = lazy(() => import('@/pages/admin/AdminEventDetailPage'));
 const EventPage                   = lazy(() => import('@/pages/EventPage'));
 const OrderConfirmationPage       = lazy(() => import('@/pages/OrderConfirmationPage'));
 
@@ -127,6 +130,11 @@ function App() {
           <Route path="/admin/orders/:id" element={<StaffRoute><AdminOrderDetailPage /></StaffRoute>} />
           <Route path="/admin/people" element={<StaffRoute><AdminPeoplePage /></StaffRoute>} />
           <Route path="/admin/people/:id" element={<StaffRoute><AdminPersonDetailPage /></StaffRoute>} />
+          {/* /new before /:id so the literal wins over the param */}
+          <Route path="/admin/events" element={<StaffRoute><AdminEventsPage /></StaffRoute>} />
+          <Route path="/admin/events/new" element={<StaffRoute><AdminEventFormPage /></StaffRoute>} />
+          <Route path="/admin/events/:id" element={<StaffRoute><AdminEventDetailPage /></StaffRoute>} />
+          <Route path="/admin/events/:id/edit" element={<StaffRoute><AdminEventFormPage /></StaffRoute>} />
           <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} />
           <Route path="/support" element={<PrivateRoute><SupportPage /></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />

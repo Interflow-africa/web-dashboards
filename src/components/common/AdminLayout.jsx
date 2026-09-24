@@ -14,7 +14,7 @@ import InterflowLogo from '@/components/common/InterflowLogo';
 const NAV = [
   { label: 'Overview',  icon: LayoutDashboard,    to: '/admin',          ready: true },
   { label: 'People',    icon: Users,              to: '/admin/people',   ready: true },
-  { label: 'Events',    icon: CalendarDays,       to: '/admin/events',   ready: false },
+  { label: 'Events',    icon: CalendarDays,       to: '/admin/events',   ready: true },
   { label: 'Orders',    icon: Receipt,            to: '/admin/orders',   ready: true },
   { label: 'Support',   icon: LifeBuoy,           to: '/admin/support',  ready: false },
   { label: 'Settings',  icon: SlidersHorizontal,  to: '/admin/settings', ready: false },
